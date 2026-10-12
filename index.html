@@ -6,6 +6,7 @@
   <title>SDDA Title Tracker</title>
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="trial-lookup.css">
+  <link rel="stylesheet" href="requirements.css">
 </head>
 <body>
   <header class="hero">
@@ -13,7 +14,7 @@
       <div>
         <p class="eyebrow">Private, local account review</p>
         <h1>SDDA Title Tracker</h1>
-        <p class="lede">Upload the two CSV or Excel files downloaded from a dog’s SDDA account. The tracker shows recorded titles, title dates, qualifying-score combinations, calculated Gold scores, and what remains.</p>
+        <p class="lede">Upload the <strong>Dog Titles</strong> file and the <strong>Dog Scores</strong> file downloaded from a dog’s SDDA account. Either file may be CSV or XLSX. The tracker shows recorded titles, title dates, qualifying-score combinations, calculated Gold scores, and what remains.</p>
       </div>
       <div class="rule-card"><strong>Rules basis</strong><span>SDDA Master Rule Book v5.1</span><small>Effective July 1, 2026</small></div>
     </div>
@@ -22,8 +23,8 @@
   <main class="wrap">
     <section class="privacy">Files stay in this browser. Nothing is uploaded to a server or saved after the page is closed.</section>
     <section class="upload-grid" aria-label="Upload SDDA account downloads">
-      <label class="upload-card"><span>1</span><strong>Dog Titles CSV or Excel</strong><small>Expected columns: Description, Honours, Title Score, Title Date</small><input id="titles-file" type="file" accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"><em id="titles-name">Choose Dog_Titles_Table CSV or XLSX</em></label>
-      <label class="upload-card"><span>2</span><strong>Dog Scores CSV or Excel</strong><small>Expected columns include Dog Number, Trial Number, Description, Score, Maximum Score</small><input id="scores-file" type="file" accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"><em id="scores-name">Choose Dog_Scores_Table CSV or XLSX</em></label>
+      <label class="upload-card"><span>1</span><strong>Dog Titles CSV or XLSX</strong><small>Expected columns: Description, Honours, Title Score, Title Date</small><input id="titles-file" type="file" accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"><em id="titles-name">Choose Dog_Titles_Table CSV or XLSX</em></label>
+      <label class="upload-card"><span>2</span><strong>Dog Scores CSV or XLSX</strong><small>Expected columns include Dog Number, Trial Number, Description, Score, Maximum Score</small><input id="scores-file" type="file" accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"><em id="scores-name">Choose Dog_Scores_Table CSV or XLSX</em></label>
     </section>
     <section class="trial-lookup">
       <div><p class="eyebrow">Optional date lookup</p><h2>Fill dates from the official Trial Workbook</h2><p>The SDDA workbook contains a <strong>Processed and Future Trials</strong> table with trial numbers and dates. Download the current workbook, then upload it here. The tracker will fill blank Event Date values when the trial number is listed.</p><div class="official-links"><a href="https://www.sdda.ca/wp-content/uploads/2026/09/TrialWorkbook-20260921.xlsx">Download current SDDA Trial Workbook</a><a href="https://www.sdda.ca/sdda-forms/" target="_blank" rel="noopener">Check SDDA Forms for a newer workbook</a></div></div>

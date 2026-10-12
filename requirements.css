@@ -1,0 +1,9 @@
+.requirements li.info {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.requirements li.info::before {
+  content: "•";
+  color: var(--muted);
+}

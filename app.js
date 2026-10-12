@@ -127,7 +127,7 @@ function eliteSets(list = scores) {
 function progressCard(title, status, requirements, note = "") {
   const met = status === "Achieved" || status === "Requirements shown as met";
   const statusClass = met ? "met" : status.includes("cannot") || status.includes("verification") ? "unknown" : "partial";
-  return `<article class="progress-card"><h3>${esc(title)}</h3><span class="status ${statusClass}">${esc(status)}</span><ul class="requirements">${requirements.map((requirement) => `<li class="${requirement.done ? "done" : ""}">${esc(requirement.text)}</li>`).join("")}</ul>${note ? `<p>${esc(note)}</p>` : ""}</article>`;
+  return `<article class="progress-card"><h3>${esc(title)}</h3><span class="status ${statusClass}">${esc(status)}</span><ul class="requirements">${requirements.map((requirement) => `<li class="${requirement.done ? "done" : ""}${requirement.info ? " info" : ""}">${esc(requirement.text)}</li>`).join("")}</ul>${note ? `<p>${esc(note)}</p>` : ""}</article>`;
 }
 
 function titlePattern(level) { return new RegExp(`^${level}(?:\\s|$)`, "i"); }
@@ -161,11 +161,30 @@ function render() {
   $("achieved").innerHTML = titles.map((title) => `<article class="title-card"><h3>${esc(title.description)}</h3><span class="status met">Achieved</span><div class="score">${title.score == null || Number.isNaN(title.score) ? "—" : esc(title.score)}</div><p>${title.score == null || Number.isNaN(title.score) ? "No title score supplied" : "Recorded title score"}</p><p><strong>${esc(dateLabel(title.date))}</strong>${title.honours ? ` · ${esc(title.honours)}` : ""}</p></article>`).join("") || `<article class="title-card"><h3>No titles listed</h3><p>The supplied title download has no recorded title rows.</p></article>`;
 
   const cards = [];
+  const levelRules = {
+    Started: ["Wintergreen; one hide in each component", "Container: 3 min · Interior: 5 min · Exterior: 5 min", "Components may be passed at different trials; no formal alert required"],
+    Advanced: ["Wintergreen and Pine; two hides in each component", "Container: 3 min · Interior: 5 min · Exterior: 5 min", "Pass the corresponding Started component first; formal alert is scored"],
+    Excellent: ["Wintergreen, Pine and Thyme; three hides in each component", "Container: 3 min · Interior: 15 min/3 rooms · Exterior: 5 min", "Pass the corresponding Advanced component first; call the clear Interior room"],
+    Elite: ["Excellent title required before entering Elite", "Container: 2–4 hides/3 min · Interior: 0–5 hides/10 min · Exterior/Vehicle: 0–3 hides/5 min", "All three components must qualify at the same trial; call every find and clear area", "No separate Amateur and Working streams"]
+  };
   for (const level of LEVELS) {
     const earned = findTitle(titlePattern(level)); const counts = componentCounts(level); const missing = COMPONENTS.filter((component) => counts[component] === 0);
-    const requirements = COMPONENTS.map((component) => ({ done: counts[component] > 0, text: `${component}: ${counts[component] ? `${counts[component]} qualifying score${counts[component] === 1 ? "" : "s"}` : "needed"}` }));
-    let status = earned ? "Achieved" : missing.length ? "In progress" : level === "Elite" ? "Needs same-trial verification" : "Requirements shown as met";
-    let note = earned ? `Recorded ${dateLabel(earned.date)}${earned.score == null ? "" : ` with title score ${earned.score}`}.` : missing.length ? `Needs ${missing.join(" and ")}.` : level === "Elite" ? "Elite requires all three components at the same trial." : "The account shows at least one qualifying score in every component.";
+    let requirements = COMPONENTS.map((component) => ({ done: counts[component] > 0, text: `${component}: ${counts[component] ? `${counts[component]} qualifying score${counts[component] === 1 ? "" : "s"}` : "needed"}` }));
+    let status, note;
+    if (level === "Elite") {
+      const completeEliteScores = eliteSets().length;
+      requirements = [
+        { done: !!findTitle(titlePattern("Excellent")) || counts.Container + counts.Interior + counts.Exterior > 0, text: "Excellent title prerequisite" },
+        { done: completeEliteScores > 0, text: `${completeEliteScores} complete same-trial Elite score${completeEliteScores === 1 ? "" : "s"}` },
+        ...requirements
+      ];
+      status = earned ? "Achieved" : completeEliteScores > 0 ? "Requirements shown as met" : "In progress";
+      note = earned ? `Recorded ${dateLabel(earned.date)}${earned.score == null ? "" : ` with title score ${earned.score}`}.` : "A Container, Interior and Exterior Q must share the same trial number.";
+    } else {
+      status = earned ? "Achieved" : missing.length ? "In progress" : "Requirements shown as met";
+      note = earned ? `Recorded ${dateLabel(earned.date)}${earned.score == null ? "" : ` with title score ${earned.score}`}.` : missing.length ? `Needs ${missing.join(" and ")}.` : "The account shows at least one qualifying score in every component.";
+    }
+    requirements.push(...levelRules[level].map((text) => ({ info: true, text })));
     cards.push(progressCard(level, status, requirements, note));
   }
 
@@ -215,7 +234,7 @@ function render() {
   $("gold-rows").innerHTML = combined.map((set) => `<tr class="${set.gold ? "gold" : ""}"><td>${set.level}</td><td>${set.rank}</td><td>${set.container}</td><td>${set.interior}</td><td>${set.exterior}</td><td>${set.total}</td><td>${set.gold ? "Gold" : set.total >= 172 ? "Silver" : set.total >= 142 ? "Bronze" : "Satisfactory"}</td></tr>`).join("") || `<tr><td colspan="7">No complete Advanced or Excellent component combination is available.</td></tr>`;
 
   const blanks = scores.filter((score) => !score.date).length;
-  $("limits").innerHTML = `<h3>Verification limits in these downloads</h3><ul><li>The score CSV contains no judge column, so two-judge and three-judge championship requirements cannot be proven.</li>${dateMatches ? `<li>${dateMatches} missing Event Date value${dateMatches === 1 ? " was" : "s were"} filled by matching Trial Number in the official Trial Workbook.</li>` : ""}${blanks ? `<li>${blanks} score row${blanks === 1 ? " still has" : "s still have"} no Event Date.${unmatchedTrials.length ? ` Trial number${unmatchedTrials.length === 1 ? "" : "s"} not found in that workbook: ${unmatchedTrials.join(", ")}.` : ""} Higher championship calculations cannot reliably exclude scores earned on or before a previous title date.</li>` : ""}<li>This report treats rows in the Dog Scores download as qualifying scores, consistent with the supplied Gold-score instructions.</li><li>SDDA remains the authority for official title approval.</li></ul>`;
+  $("limits").innerHTML = `<h3>Verification limits in these downloads</h3><ul><li>The score download contains no judge column, so two-judge and three-judge championship requirements cannot be proven.</li>${dateMatches ? `<li>${dateMatches} missing Event Date value${dateMatches === 1 ? " was" : "s were"} filled by matching Trial Number in the official Trial Workbook.</li>` : ""}${blanks ? `<li>${blanks} score row${blanks === 1 ? " still has" : "s still have"} no Event Date.${unmatchedTrials.length ? ` Trial number${unmatchedTrials.length === 1 ? "" : "s"} not found in that workbook: ${unmatchedTrials.join(", ")}.` : ""} Higher championship calculations cannot reliably exclude scores earned on or before a previous title date.</li>` : ""}<li>This report treats rows in the Dog Scores download as qualifying scores, consistent with the supplied Gold-score instructions.</li><li>SDDA remains the authority for official title approval.</li></ul>`;
 }
 
 async function loadTitles(file) {
