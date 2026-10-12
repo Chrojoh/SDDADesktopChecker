@@ -7,3 +7,10 @@
   content: "•";
   color: var(--muted);
 }
+
+.hero .lede a {
+  color: #fff;
+  font-weight: 800;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+}
