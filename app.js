@@ -110,6 +110,32 @@ function highToLow(level, list = scores) {
   });
 }
 
+function maximizeGoldCombinations(list = scores, maximum = 10) {
+  const eligible = list.filter((score) => score.level === "Advanced" || score.level === "Excellent");
+  const ranked = Object.fromEntries(COMPONENTS.map((component) => [component, eligible.filter((score) => score.component === component).sort((a, b) => b.score - a.score)]));
+  const count = Math.min(maximum, ...COMPONENTS.map((component) => ranked[component].length));
+  if (!count) return [];
+  const containers = ranked.Container.slice(0, count), interiors = ranked.Interior.slice(0, count), exteriors = ranked.Exterior.slice(0, count);
+  let seed = 0x5dda2026;
+  const random = () => { seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0; return seed / 4294967296; };
+  const shuffle = (values) => {
+    const result = [...values];
+    for (let index = result.length - 1; index > 0; index--) { const swap = Math.floor(random() * (index + 1)); [result[index], result[swap]] = [result[swap], result[index]]; }
+    return result;
+  };
+  let best = [], bestGolds = -1;
+  for (let attempt = 0; attempt < 60000; attempt++) {
+    const iRows = attempt ? shuffle(interiors) : interiors, eRows = attempt ? shuffle(exteriors) : exteriors;
+    const combinations = containers.map((container, index) => {
+      const interior = iRows[index], exterior = eRows[index], total = container.score + interior.score + exterior.score;
+      return { rank: index + 1, container, interior, exterior, total, gold: total >= 192 };
+    });
+    const golds = combinations.filter((combination) => combination.gold).length;
+    if (golds > bestGolds) { best = combinations; bestGolds = golds; if (bestGolds === count) break; }
+  }
+  return best.sort((a, b) => b.total - a.total).map((combination, index) => ({ ...combination, rank: index + 1 }));
+}
+
 function eliteSets(list = scores) {
   const trials = new Map();
   list.filter((score) => score.level === "Elite").forEach((score) => {
@@ -287,6 +313,10 @@ function render() {
   $("gold-summary").innerHTML = `<span>${advanced.length} Advanced combinations</span><span>${excellent.length} Excellent combinations</span><span class="gold">${golds.length} calculated Gold scores</span>`;
   $("gold-rows").innerHTML = combined.map((set) => `<tr class="${set.gold ? "gold" : ""}"><td>${set.level}</td><td>${set.rank}</td><td>${set.container}</td><td>${set.interior}</td><td>${set.exterior}</td><td>${set.total}</td><td>${set.gold ? "Gold" : set.total >= 172 ? "Silver" : set.total >= 142 ? "Bronze" : "Satisfactory"}</td></tr>`).join("") || `<tr><td colspan="7">No complete Advanced or Excellent component combination is available.</td></tr>`;
 
+  const optimized = maximizeGoldCombinations(), optimizedGolds = optimized.filter((set) => set.gold).length;
+  $("optimized-gold-summary").innerHTML = `<span>${optimized.length} pooled championship combinations</span><span class="gold">${optimizedGolds} maximized Gold scores</span><span>${optimized.length - optimizedGolds} non-Gold score${optimized.length - optimizedGolds === 1 ? "" : "s"}</span>`;
+  $("optimized-gold-rows").innerHTML = optimized.map((set) => `<tr class="${set.gold ? "gold" : ""}"><td>${set.rank}</td><td>${set.container.score} <small>${set.container.level[0]}</small></td><td>${set.interior.score} <small>${set.interior.level[0]}</small></td><td>${set.exterior.score} <small>${set.exterior.level[0]}</small></td><td>${set.total}</td><td>${set.gold ? "Gold" : set.total >= 172 ? "Silver" : set.total >= 142 ? "Bronze" : "Satisfactory"}</td></tr>`).join("") || `<tr><td colspan="6">Not enough eligible components are available.</td></tr>`;
+
   const blanks = scores.filter((score) => !score.date).length;
   $("limits").innerHTML = `<h3>Verification limits in these downloads</h3><ul><li>The score download contains no judge column, so two-judge and three-judge championship requirements cannot be proven.</li>${dateMatches ? `<li>${dateMatches} missing Event Date value${dateMatches === 1 ? " was" : "s were"} filled by matching Trial Number in the official Trial Workbook.</li>` : ""}${blanks ? `<li>${blanks} score row${blanks === 1 ? " still has" : "s still have"} no Event Date.${unmatchedTrials.length ? ` Trial number${unmatchedTrials.length === 1 ? "" : "s"} not found in that workbook: ${unmatchedTrials.join(", ")}.` : ""} Higher championship calculations cannot reliably exclude scores earned on or before a previous title date.</li>` : ""}<li>This report treats rows in the Dog Scores download as qualifying scores, consistent with the supplied Gold-score instructions.</li><li>SDDA remains the authority for official title approval.</li></ul>`;
 }
@@ -325,6 +355,15 @@ async function loadTrialWorkbook(file) {
 $("titles-file").addEventListener("change", async (event) => { try { if (event.target.files[0]) await loadTitles(event.target.files[0]); } catch (error) { $("message").textContent = error.message; } });
 $("scores-file").addEventListener("change", async (event) => { try { if (event.target.files[0]) await loadScores(event.target.files[0]); } catch (error) { $("message").textContent = error.message; } });
 $("workbook-file").addEventListener("change", async (event) => { try { if (event.target.files[0]) await loadTrialWorkbook(event.target.files[0]); } catch (error) { $("message").textContent = `Trial Workbook import failed: ${error.message}`; } });
+
+function showGoldMethod(method) {
+  const published = method === "published";
+  $("published-method").hidden = !published; $("optimized-method").hidden = published;
+  $("published-tab").classList.toggle("active", published); $("optimized-tab").classList.toggle("active", !published);
+  $("published-tab").setAttribute("aria-selected", String(published)); $("optimized-tab").setAttribute("aria-selected", String(!published));
+}
+$("published-tab").addEventListener("click", () => showGoldMethod("published"));
+$("optimized-tab").addEventListener("click", () => showGoldMethod("optimized"));
 
 async function downloadPdfReport() {
   if (!scores.length) return;
