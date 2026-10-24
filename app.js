@@ -1,6 +1,6 @@
 "use strict";
 
-const COMPONENTS = ["Container", "Interior", "Exterior"];
+const COMPONENTS = ["Container", "Exterior", "Interior"];
 const LEVELS = ["Started", "Advanced", "Excellent", "Elite"];
 let titles = [], scores = [], trialDates = new Map(), dateMatches = 0, unmatchedTrials = [];
 
@@ -282,10 +282,10 @@ function render() {
 
   const cards = [];
   const levelRules = {
-    Started: ["Wintergreen; one hide in each component", "Container: 3 min · Interior: 5 min · Exterior: 5 min", "Components may be passed at different trials; no formal alert required"],
-    Advanced: ["Wintergreen and Pine; two hides in each component", "Container: 3 min · Interior: 5 min · Exterior: 5 min", "Pass the corresponding Started component first; formal alert is scored"],
-    Excellent: ["Wintergreen, Pine and Thyme; three hides in each component", "Container: 3 min · Interior: 15 min/3 rooms · Exterior: 5 min", "Pass the corresponding Advanced component first; call the clear Interior room"],
-    Elite: ["Excellent title required before entering Elite", "Container: 2–4 hides/3 min · Interior: 0–5 hides/10 min · Exterior/Vehicle: 0–3 hides/5 min", "All three components must qualify at the same trial; call every find and clear area", "No separate Amateur and Working streams"]
+    Started: ["Wintergreen; one hide in each component", "Container: 3 min · Exterior: 5 min · Interior: 5 min", "Components may be passed at different trials; no formal alert required"],
+    Advanced: ["Wintergreen and Pine; two hides in each component", "Container: 3 min · Exterior: 5 min · Interior: 5 min", "Pass the corresponding Started component first; formal alert is scored"],
+    Excellent: ["Wintergreen, Pine and Thyme; three hides in each component", "Container: 3 min · Exterior: 5 min · Interior: 15 min/3 rooms", "Pass the corresponding Advanced component first; call the clear Interior room"],
+    Elite: ["Excellent title required before entering Elite", "Container: 2–4 hides/3 min · Exterior/Vehicle: 0–3 hides/5 min · Interior: 0–5 hides/10 min", "All three components must qualify at the same trial; call every find and clear area", "No separate Amateur and Working streams"]
   };
   for (const level of LEVELS) {
     const earned = findTitle(titlePattern(level)); const counts = componentCounts(level); const missing = COMPONENTS.filter((component) => counts[component] === 0);
