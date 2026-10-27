@@ -1,0 +1,92 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1120" viewBox="0 0 1600 1120">
+ <rect width="1600" height="1120" fill="#e8ede9"/>
+ <style>
+  .page{fill:#fff;stroke:#cbd5ce;stroke-width:2}.green{fill:#286448}.muted{fill:#66756d}.ink{fill:#17231d}.gold{fill:#8a5a00}.rule{stroke:#d5ddd7}.soft{fill:#eef3ef}.warn{fill:#fff8e8;stroke:#ead4a5}.h{font:700 16px Arial}.sh{font:700 12px Arial}.t{font:11px Arial}.xs{font:9px Arial}.title{font:700 25px Georgia}.card{fill:#fff;stroke:#d5ddd7}.ok{fill:#286448;font:700 10px Arial}
+ </style>
+ <g font-family="Arial">
+  <text x="800" y="31" text-anchor="middle" class="h green">PROPOSED COMPLETE PRINT LAYOUT — FOUR PORTRAIT PAGES</text>
+
+  <!-- PAGE 1 -->
+  <g transform="translate(25 48)">
+   <rect width="760" height="510" rx="5" class="page"/>
+   <text x="25" y="30" class="xs green" font-weight="700" letter-spacing="2">ACCOUNT REPORT</text><text x="25" y="59" class="title ink">Cali</text><text x="25" y="79" class="t muted">SDDA #2237 · 160 qualifying component scores · 4 titles calculated from scores</text><text x="730" y="30" text-anchor="end" class="xs muted">PAGE 1</text>
+   <line x1="25" y1="94" x2="735" y2="94" class="rule"/>
+   <text x="25" y="118" class="sh green">TITLES ACHIEVED</text>
+   <rect x="25" y="130" width="710" height="72" rx="4" class="soft"/>
+   <text x="42" y="151" class="sh ink">Started Special</text><text x="226" y="151" class="t ink">92</text><text x="275" y="151" class="t muted">Calculated · Trial 360 · date not supplied</text>
+   <text x="42" y="172" class="sh ink">Advanced</text><text x="226" y="172" class="t ink">188</text><text x="275" y="172" class="t muted">Calculated · date not supplied</text>
+   <text x="42" y="193" class="sh ink">Excellent Special</text><text x="226" y="193" class="t ink">195</text><text x="275" y="193" class="t muted">Calculated · Trial 427 · date not supplied</text>
+   <text x="500" y="172" class="sh ink">Elite</text><text x="570" y="172" class="t ink">195</text><text x="610" y="172" class="t muted">Trial 1557</text>
+   <text x="25" y="228" class="sh green">WHAT IS NEEDED NEXT</text><text x="735" y="228" text-anchor="end" class="xs muted">Cards use independent heights instead of equal-height grid rows</text>
+
+   <rect x="25" y="241" width="225" height="166" rx="5" class="card"/><text x="40" y="265" class="h ink">Started</text><text x="40" y="286" class="ok">REQUIREMENTS SHOWN AS MET</text><text x="40" y="309" class="t ink">✓ Container: 2 qualifying scores</text><text x="40" y="330" class="t ink">✓ Exterior: 1 qualifying score</text><text x="40" y="351" class="t ink">✓ Interior: 2 qualifying scores</text><text x="40" y="374" class="xs muted">• Wintergreen; one hide each</text><text x="40" y="391" class="xs muted">• May pass at different trials</text>
+   <rect x="267" y="241" width="225" height="220" rx="5" class="card"/><text x="282" y="265" class="h ink">Advanced</text><text x="282" y="286" class="ok">REQUIREMENTS SHOWN AS MET</text><text x="282" y="309" class="t ink">✓ Container: 19 qualifying</text><text x="282" y="330" class="t ink">✓ Exterior: 19 qualifying</text><text x="282" y="351" class="t ink">✓ Interior: 19 qualifying</text><text x="282" y="374" class="xs muted">• Wintergreen and Pine</text><text x="282" y="391" class="xs muted">• 3 / 5 / 5 minute limits</text><text x="282" y="408" class="xs muted">• Started component prerequisite</text><text x="282" y="425" class="xs muted">• Formal alert scored</text><text x="282" y="448" class="xs muted">At least one Q in every component.</text>
+   <rect x="509" y="241" width="226" height="220" rx="5" class="card"/><text x="524" y="265" class="h ink">Excellent</text><text x="524" y="286" class="ok">REQUIREMENTS SHOWN AS MET</text><text x="524" y="309" class="t ink">✓ Container: 10 qualifying</text><text x="524" y="330" class="t ink">✓ Exterior: 11 qualifying</text><text x="524" y="351" class="t ink">✓ Interior: 10 qualifying</text><text x="524" y="374" class="xs muted">• Wintergreen, Pine and Thyme</text><text x="524" y="391" class="xs muted">• 3 / 15 / 5 minute limits</text><text x="524" y="408" class="xs muted">• Advanced component prerequisite</text><text x="524" y="425" class="xs muted">• Call clear Interior room</text><text x="524" y="448" class="xs muted">At least one Q in every component.</text>
+   <text x="25" y="490" class="xs muted">All original Started, Advanced and Excellent criteria remain visible.</text>
+  </g>
+
+  <!-- PAGE 2 -->
+  <g transform="translate(815 48)">
+   <rect width="760" height="510" rx="5" class="page"/>
+   <text x="25" y="32" class="sh green">WHAT IS NEEDED NEXT — CONTINUED</text><text x="730" y="32" text-anchor="end" class="xs muted">PAGE 2</text>
+   <rect x="25" y="52" width="340" height="260" rx="5" class="card"/><text x="42" y="78" class="h ink">Elite</text><text x="42" y="99" class="ok">REQUIREMENTS SHOWN AS MET</text><text x="42" y="123" class="t ink">✓ Excellent title prerequisite</text><text x="42" y="145" class="t ink">✓ 3 complete same-trial Elite scores</text><text x="42" y="167" class="t ink">✓ Container: 27 qualifying scores</text><text x="42" y="189" class="t ink">✓ Exterior: 31 qualifying scores</text><text x="42" y="211" class="t ink">✓ Interior: 9 qualifying scores</text><text x="42" y="236" class="xs muted">• All components qualify at same trial</text><text x="42" y="254" class="xs muted">• Call every find and clear area</text><text x="42" y="272" class="xs muted">• No Amateur / Working streams</text><text x="42" y="296" class="t muted">C, E and I Q must share trial number.</text>
+   <rect x="382" y="52" width="353" height="130" rx="5" class="card"/><text x="399" y="78" class="h ink">SD-CH</text><text x="399" y="99" class="ok">REQUIREMENTS SHOWN AS MET</text><text x="399" y="123" class="t ink">✓ 29/5 Advanced or Excellent scores</text><text x="399" y="145" class="t ink">✓ 10/2 must be Excellent</text><text x="399" y="167" class="xs muted">Advanced and Excellent pools remain separate.</text>
+   <rect x="382" y="196" width="353" height="116" rx="5" class="card"/><text x="399" y="222" class="h ink">SD-MACH</text><text x="399" y="243" class="ok">REQUIREMENTS SHOWN AS MET</text><text x="399" y="267" class="t ink">✓ 29/10 scores · ✓ 10/3 Excellent</text><text x="399" y="289" class="t ink">✓ 29/3 calculated Gold scores</text>
+   <rect x="25" y="329" width="340" height="146" rx="5" class="card"/><text x="42" y="355" class="h ink">SD-ELCH</text><text x="42" y="376" class="sh gold">IN PROGRESS</text><text x="42" y="400" class="t ink">○ 3/5 complete same-trial Elite scores</text><text x="42" y="422" class="t ink">✓ 3/2 calculated Elite Gold scores</text><text x="42" y="444" class="t ink">○ Two judges cannot be verified</text><text x="42" y="464" class="xs muted">Judge names are absent from the score CSV.</text>
+   <rect x="382" y="329" width="353" height="146" rx="5" class="card"/><text x="399" y="355" class="h ink">GMCH</text><text x="399" y="376" class="sh gold">IN PROGRESS</text><text x="399" y="400" class="t ink">✓ SD-MACH score requirements met</text><text x="399" y="422" class="t ink">○ SD-ELCH required</text><text x="399" y="444" class="t ink">○ At least 3 judges cannot be verified</text><text x="399" y="464" class="xs muted">Official approval requires SDDA confirmation.</text>
+   <text x="25" y="498" class="xs muted">Every requirement and explanatory paragraph from the original cards is retained.</text>
+  </g>
+
+  <!-- PAGE 3: all 19 Advanced rows -->
+  <g transform="translate(25 585)">
+   <rect width="760" height="510" rx="5" class="page"/>
+   <text x="25" y="31" class="xs green" font-weight="700" letter-spacing="2">GOLD CALCULATIONS GROUPED BY LEVEL</text><text x="25" y="57" class="title ink">Advanced combinations</text><text x="730" y="31" text-anchor="end" class="xs muted">PAGE 3</text>
+   <rect x="25" y="72" width="710" height="34" rx="4" class="soft"/><text x="42" y="94" class="h ink">19 combinations</text><text x="250" y="94" class="h gold">19 Gold</text><text x="400" y="94" class="h ink">0 non-Gold</text>
+   <rect x="25" y="117" width="710" height="25" class="soft"/><text x="38" y="134" class="xs green" font-weight="700">COMBINATION</text><text x="240" y="134" class="xs green" font-weight="700">CONTAINER</text><text x="350" y="134" class="xs green" font-weight="700">EXTERIOR</text><text x="455" y="134" class="xs green" font-weight="700">INTERIOR</text><text x="560" y="134" class="xs green" font-weight="700">TOTAL</text><text x="645" y="134" class="xs green" font-weight="700">CLASS</text>
+   <g class="t ink">
+    <text x="38" y="160">1</text><text x="260" y="160">60</text><text x="370" y="160">60</text><text x="475" y="160">80</text><text x="570" y="160">200</text><text x="645" y="160" class="gold">Gold</text>
+    <text x="38" y="178">2</text><text x="260" y="178">60</text><text x="370" y="178">60</text><text x="475" y="178">80</text><text x="570" y="178">200</text><text x="645" y="178" class="gold">Gold</text>
+    <text x="38" y="196">3</text><text x="260" y="196">60</text><text x="370" y="196">60</text><text x="475" y="196">80</text><text x="570" y="196">200</text><text x="645" y="196" class="gold">Gold</text>
+    <text x="38" y="214">4</text><text x="260" y="214">60</text><text x="370" y="214">60</text><text x="475" y="214">80</text><text x="570" y="214">200</text><text x="645" y="214" class="gold">Gold</text>
+    <text x="38" y="232">5</text><text x="260" y="232">60</text><text x="370" y="232">60</text><text x="475" y="232">80</text><text x="570" y="232">200</text><text x="645" y="232" class="gold">Gold</text>
+    <text x="38" y="250">6</text><text x="260" y="250">60</text><text x="370" y="250">59</text><text x="475" y="250">80</text><text x="570" y="250">199</text><text x="645" y="250" class="gold">Gold</text>
+    <text x="38" y="268">7</text><text x="260" y="268">60</text><text x="370" y="268">60</text><text x="475" y="268">79</text><text x="570" y="268">199</text><text x="645" y="268" class="gold">Gold</text>
+    <text x="38" y="286">8</text><text x="260" y="286">60</text><text x="370" y="286">58</text><text x="475" y="286">80</text><text x="570" y="286">198</text><text x="645" y="286" class="gold">Gold</text>
+    <text x="38" y="304">9</text><text x="260" y="304">60</text><text x="370" y="304">58</text><text x="475" y="304">80</text><text x="570" y="304">198</text><text x="645" y="304" class="gold">Gold</text>
+    <text x="38" y="322">10</text><text x="260" y="322">58</text><text x="370" y="322">60</text><text x="475" y="322">80</text><text x="570" y="322">198</text><text x="645" y="322" class="gold">Gold</text>
+    <text x="38" y="340">11</text><text x="260" y="340">58</text><text x="370" y="340">60</text><text x="475" y="340">80</text><text x="570" y="340">198</text><text x="645" y="340" class="gold">Gold</text>
+    <text x="38" y="358">12</text><text x="260" y="358">57</text><text x="370" y="358">60</text><text x="475" y="358">80</text><text x="570" y="358">197</text><text x="645" y="358" class="gold">Gold</text>
+    <text x="38" y="376">13</text><text x="260" y="376">57</text><text x="370" y="376">60</text><text x="475" y="376">80</text><text x="570" y="376">197</text><text x="645" y="376" class="gold">Gold</text>
+    <text x="38" y="394">14</text><text x="260" y="394">58</text><text x="370" y="394">58</text><text x="475" y="394">80</text><text x="570" y="394">196</text><text x="645" y="394" class="gold">Gold</text>
+    <text x="38" y="412">15</text><text x="260" y="412">58</text><text x="370" y="412">57</text><text x="475" y="412">80</text><text x="570" y="412">195</text><text x="645" y="412" class="gold">Gold</text>
+    <text x="38" y="430">16</text><text x="260" y="430">59</text><text x="370" y="430">60</text><text x="475" y="430">75</text><text x="570" y="430">194</text><text x="645" y="430" class="gold">Gold</text>
+    <text x="38" y="448">17</text><text x="260" y="448">56</text><text x="370" y="448">57</text><text x="475" y="448">80</text><text x="570" y="448">193</text><text x="645" y="448" class="gold">Gold</text>
+    <text x="38" y="466">18</text><text x="260" y="466">55</text><text x="370" y="466">60</text><text x="475" y="466">78</text><text x="570" y="466">193</text><text x="645" y="466" class="gold">Gold</text>
+    <text x="38" y="484">19</text><text x="260" y="484">57</text><text x="370" y="484">60</text><text x="475" y="484">75</text><text x="570" y="484">192</text><text x="645" y="484" class="gold">Gold</text>
+   </g>
+  </g>
+
+  <!-- PAGE 4 -->
+  <g transform="translate(815 585)">
+   <rect width="760" height="510" rx="5" class="page"/>
+   <text x="25" y="30" class="sh green">EXCELLENT COMBINATIONS</text><text x="730" y="30" text-anchor="end" class="xs muted">PAGE 4</text>
+   <text x="25" y="52" class="h ink">10 combinations</text><text x="190" y="52" class="h gold">10 Gold</text><text x="300" y="52" class="h ink">0 non-Gold</text>
+   <rect x="25" y="63" width="710" height="22" class="soft"/><text x="38" y="78" class="xs green" font-weight="700">COMBINATION</text><text x="260" y="78" class="xs green" font-weight="700">C</text><text x="345" y="78" class="xs green" font-weight="700">E</text><text x="430" y="78" class="xs green" font-weight="700">I</text><text x="520" y="78" class="xs green" font-weight="700">TOTAL</text><text x="625" y="78" class="xs green" font-weight="700">CLASS</text>
+   <g class="t ink"><text x="38" y="101">SP locked · Trial 427</text><text x="260" y="101">58</text><text x="345" y="101">59</text><text x="430" y="101">78</text><text x="520" y="101">195</text><text x="625" y="101" class="gold">Gold</text>
+   <text x="38" y="120">1</text><text x="260" y="120">60</text><text x="345" y="120">59</text><text x="430" y="120">80</text><text x="520" y="120">199</text><text x="625" y="120" class="gold">Gold</text>
+   <text x="38" y="139">2</text><text x="260" y="139">60</text><text x="345" y="139">59</text><text x="430" y="139">79</text><text x="520" y="139">198</text><text x="625" y="139" class="gold">Gold</text>
+   <text x="38" y="158">3</text><text x="260" y="158">58</text><text x="345" y="158">60</text><text x="430" y="158">80</text><text x="520" y="158">198</text><text x="625" y="158" class="gold">Gold</text>
+   <text x="38" y="177">4</text><text x="260" y="177">59</text><text x="345" y="177">60</text><text x="430" y="177">78</text><text x="520" y="177">197</text><text x="625" y="177" class="gold">Gold</text>
+   <text x="38" y="196">5</text><text x="260" y="196">58</text><text x="345" y="196">60</text><text x="430" y="196">79</text><text x="520" y="196">197</text><text x="625" y="196" class="gold">Gold</text>
+   <text x="38" y="215">6</text><text x="260" y="215">58</text><text x="345" y="215">58</text><text x="430" y="215">80</text><text x="520" y="215">196</text><text x="625" y="215" class="gold">Gold</text>
+   <text x="38" y="234">7</text><text x="260" y="234">58</text><text x="345" y="234">60</text><text x="430" y="234">78</text><text x="520" y="234">196</text><text x="625" y="234" class="gold">Gold</text>
+   <text x="38" y="253">8</text><text x="260" y="253">57</text><text x="345" y="253">60</text><text x="430" y="253">78</text><text x="520" y="253">195</text><text x="625" y="253" class="gold">Gold</text>
+   <text x="38" y="272">9</text><text x="260" y="272">55</text><text x="345" y="272">59</text><text x="430" y="272">80</text><text x="520" y="272">194</text><text x="625" y="272" class="gold">Gold</text></g>
+   <text x="25" y="306" class="sh green">ELITE SAME-TRIAL SCORES</text><text x="260" y="306" class="sh gold">3 scores · 3 Gold</text>
+   <rect x="25" y="317" width="710" height="22" class="soft"/><text x="38" y="332" class="xs green" font-weight="700">TRIAL</text><text x="260" y="332" class="xs green" font-weight="700">C</text><text x="345" y="332" class="xs green" font-weight="700">E</text><text x="430" y="332" class="xs green" font-weight="700">I</text><text x="520" y="332" class="xs green" font-weight="700">TOTAL</text><text x="625" y="332" class="xs green" font-weight="700">CLASS</text>
+   <g class="t ink"><text x="38" y="355">1557</text><text x="260" y="355">57</text><text x="345" y="355">59</text><text x="430" y="355">79</text><text x="520" y="355">195</text><text x="625" y="355" class="gold">Gold</text><text x="38" y="375">2272</text><text x="260" y="375">58</text><text x="345" y="375">58</text><text x="430" y="375">79</text><text x="520" y="375">195</text><text x="625" y="375" class="gold">Gold</text><text x="38" y="395">2395</text><text x="260" y="395">58</text><text x="345" y="395">60</text><text x="430" y="395">80</text><text x="520" y="395">198</text><text x="625" y="395" class="gold">Gold</text></g>
+   <rect x="25" y="415" width="710" height="70" rx="5" class="warn"/><text x="42" y="437" class="sh ink">Verification limits in these downloads</text><text x="42" y="455" class="xs ink">• No judge column · 160 rows without Event Date · title-date exclusions cannot be verified</text><text x="42" y="472" class="xs ink">• Downloaded scores are treated as qualifying · SDDA remains the official authority</text>
+   <text x="25" y="500" class="xs muted">Every one of the 19 + 10 + 3 calculated score rows is displayed—none are summarized away.</text>
+  </g>
+ </g>
+</svg>

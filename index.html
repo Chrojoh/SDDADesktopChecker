@@ -2,52 +2,58 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>SDDA Title Tracker</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>SDDA Achievement Ledger — Desktop</title>
   <link rel="stylesheet" href="styles.css">
-  <link rel="stylesheet" href="trial-lookup.css">
-  <link rel="stylesheet" href="requirements.css">
-  <style>.level-score-block{margin-top:20px}.level-score-block h3{margin:0 0 9px;color:var(--green);font-size:18px}.level-note{margin:-2px 0 10px;color:var(--muted);font-size:13px}</style>
+  <link rel="stylesheet" href="games.css">
+  <link rel="stylesheet" href="mobile-dashboard.css?v=20261027-2">
+  <link rel="stylesheet" href="desktop-ledger.css?v=20261027-1">
 </head>
-<body>
-  <header class="hero">
-    <div class="wrap hero-grid">
-      <div>
-        <p class="eyebrow">Private, local account review</p>
-        <h1>SDDA Title Tracker</h1>
-        <p class="lede">To use this tracker, upload the DOG SCORES file downloaded from your <a href="https://www.sdda.ca/my-profile/" target="_blank" rel="noopener">SDDA account</a>. You may also upload the optional DOG TITLES file to confirm SDDA-recorded titles and title dates. Either file can be in CSV or XLSX format. The tracker will show recorded or calculated titles, qualifying score combinations, calculated Gold scores, and criteria still needed for further titles.</p>
-      </div>
-      <div class="rule-card"><strong>Rules basis</strong><span>SDDA Master Rule Book v5.1</span><small>Effective July 1, 2026</small></div>
+<body class="desktop-ledger">
+  <header class="desktop-hero">
+    <div class="desktop-shell hero-row">
+      <div><p class="desktop-kicker">Sporting Detection Dogs Association</p><h1>SDDA Achievement Ledger</h1><p>Review Scent and Games achievements, calculated combinations, and the shortest path to the next title.</p></div>
+      <a class="account-link" href="https://www.sdda.ca/my-profile/" target="_blank" rel="noopener">Open your SDDA account</a>
     </div>
   </header>
 
-  <main class="wrap">
-    <section class="privacy">Files stay in this browser. Nothing is uploaded to a server or saved after the page is closed.</section>
-    <section class="upload-grid" aria-label="Upload SDDA account downloads">
-      <label class="upload-card"><span>1</span><strong>Required — Dog Scores CSV or XLSX</strong><small>Expected columns include Dog Number, Trial Number, Description, Score, Maximum Score</small><input id="scores-file" type="file" accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"><em id="scores-name">Choose Dog_Scores_Table CSV or XLSX</em></label>
-      <label class="upload-card"><span>2</span><strong>Optional — Dog Titles CSV or XLSX</strong><small>Confirms official titles and dates. Expected: Description, Honours, Title Score, Title Date</small><input id="titles-file" type="file" accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"><em id="titles-name">Choose Dog_Titles_Table CSV or XLSX, if available</em></label>
+  <main class="desktop-shell">
+    <section class="desktop-upload-row">
+      <label class="score-upload desktop-upload"><span class="upload-icon">↑</span><span><strong>Upload Dog Scores</strong><small>Choose the XLSX or CSV downloaded for one registered dog</small></span><input id="scores-file" type="file"></label>
+      <div class="upload-copy"><p id="scores-name" class="file-name">No score file selected.</p><p class="privacy-line">The file is processed locally and cleared when the page closes.</p><div id="message" class="message">Upload a Dog Scores file to begin.</div></div>
     </section>
-    <section class="trial-lookup">
-      <div><p class="eyebrow">Optional date lookup</p><h2>Fill dates from the official Trial Workbook</h2><p>The SDDA workbook contains a <strong>Processed and Future Trials</strong> table with trial numbers and dates. Download the current workbook, then upload it here. The tracker will fill blank Event Date values when the trial number is listed.</p><div class="official-links"><a href="https://www.sdda.ca/wp-content/uploads/2026/09/TrialWorkbook-20260921.xlsx">Download current SDDA Trial Workbook</a><a href="https://www.sdda.ca/sdda-forms/" target="_blank" rel="noopener">Check SDDA Forms for a newer workbook</a></div></div>
-      <label class="workbook-upload"><strong>Upload Trial Workbook</strong><input id="workbook-file" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"><span id="workbook-name">Choose the downloaded .xlsx file</span></label>
-    </section>
-    <div id="message" class="message">Upload the Dog Scores file to calculate title progress. The Dog Titles file is optional.</div>
 
-    <section id="report" hidden>
-      <div class="dog-head">
-        <div><p class="eyebrow">Account report</p><h2 id="dog-name"></h2><p id="dog-meta"></p></div>
-        <button id="print-button" type="button">Print / save PDF</button>
-      </div>
+    <section id="report" class="desktop-report" hidden>
+      <header class="dog-head mobile-dog-head desktop-dog-head"><div><p class="eyebrow">Achievement summary</p><h2 id="dog-name"></h2><p id="dog-meta"></p></div><button id="print-button" class="print-button desktop-pdf" type="button">Create PDF report</button></header>
+      <a id="pdf-ready" class="pdf-ready" hidden>PDF created — open or download it</a>
 
-      <section><div class="section-head"><div><p class="eyebrow">Recorded or calculated</p><h2>Titles achieved</h2></div><p>The card label shows whether a title came from the optional SDDA Titles file or was calculated from scores.</p></div><div id="achieved" class="card-grid"></div></section>
-      <section><div class="section-head"><div><p class="eyebrow">Current position</p><h2>What is needed next</h2></div><p>“Calculated” means derived from the supplied score history and should be confirmed by SDDA.</p></div><div id="progress" class="progress-grid"></div></section>
-      <section><div class="section-head"><div><p class="eyebrow">Gold calculations grouped by level</p><h2>Advanced, Excellent and Elite scores</h2></div><p>Advanced components combine only with Advanced, and Excellent only with Excellent. Each component is used once. Initial Special titles and all Elite scores remain grouped together.</p></div><div class="level-score-block"><h3>Advanced combinations</h3><div id="advanced-gold-summary" class="summary-strip"></div><div class="table-wrap"><table><thead><tr><th>Combination</th><th>Container</th><th>Interior</th><th>Exterior</th><th>Total</th><th>Classification</th></tr></thead><tbody id="advanced-gold-rows"></tbody></table></div></div><div class="level-score-block"><h3>Excellent combinations</h3><div id="excellent-gold-summary" class="summary-strip"></div><div class="table-wrap"><table><thead><tr><th>Combination</th><th>Container</th><th>Interior</th><th>Exterior</th><th>Total</th><th>Classification</th></tr></thead><tbody id="excellent-gold-rows"></tbody></table></div></div><div class="level-score-block"><h3>Elite same-trial scores</h3><p class="level-note">Every complete Elite score is shown because non-Gold scores still count toward the required Elite titling-score total.</p><div id="elite-gold-summary" class="summary-strip"></div><div class="table-wrap"><table><thead><tr><th>Trial</th><th>Container</th><th>Interior</th><th>Exterior</th><th>Total</th><th>Classification</th></tr></thead><tbody id="elite-gold-rows"></tbody></table></div></div></section>
-      <section id="limits" class="limits"></section>
+      <nav class="tracker-tabs desktop-tabs" aria-label="Tracker sections">
+        <button class="tracker-tab active" type="button" data-tab="scent" aria-selected="true">Scent achievements</button>
+        <button class="tracker-tab" type="button" data-tab="games" aria-selected="false">Games achievements</button>
+        <button class="tracker-tab" type="button" data-tab="next" aria-selected="false">Closest titles</button>
+      </nav>
+
+      <section class="tracker-panel" data-panel="scent">
+        <div class="desktop-section-head"><div><p class="desktop-kicker">Qualifications</p><h2>Scent titles</h2></div><p>Open a title to review achieved requirements and remaining verification.</p></div>
+        <div id="mobile-scent-titles" class="accordion-list desktop-card-grid"></div>
+        <div class="desktop-section-head run-heading"><div><p class="desktop-kicker">Score ledger</p><h2>Advanced, Excellent and Elite runs</h2></div><p>SP means Special. Its title-earning components remain together as one locked combination.</p></div>
+        <div id="mobile-scent-runs" class="accordion-list desktop-run-grid"></div>
+      </section>
+
+      <section class="tracker-panel" data-panel="games" hidden>
+        <div class="desktop-section-head"><div><p class="desktop-kicker">Pass ledger</p><h2>Games achievements</h2></div><p>Games passes and championships are tracked separately from scored Scent components.</p></div>
+        <div id="mobile-game-titles" class="accordion-list desktop-card-grid"></div><div id="mobile-game-runs" class="accordion-list desktop-run-grid"></div>
+      </section>
+
+      <section class="tracker-panel" data-panel="next" hidden>
+        <div class="desktop-section-head"><div><p class="desktop-kicker">Planning view</p><h2>Closest titles</h2></div><p>Unfinished titles are ordered by the fewest remaining requirements.</p></div>
+        <div id="mobile-next-list" class="next-list desktop-next-grid"></div>
+      </section>
+
+      <div class="legacy-output" aria-hidden="true"><div id="achieved"></div><div id="progress"></div><div id="games-summary"></div><div id="games-grid"></div><div id="games-championships"></div><div id="advanced-gold-summary"></div><table><tbody id="advanced-gold-rows"></tbody></table><div id="excellent-gold-summary"></div><table><tbody id="excellent-gold-rows"></tbody></table><div id="elite-gold-summary"></div><table><tbody id="elite-gold-rows"></tbody></table><div id="limits"></div></div>
     </section>
+    <div hidden><input id="titles-file" type="file"><span id="titles-name"></span><input id="workbook-file" type="file"><span id="workbook-name"></span></div>
   </main>
-  <footer>Independent planning aid. Confirm title applications and official eligibility with the Sporting Detection Dogs Association.</footer>
-  <script src="vendor/xlsx.full.min.js"></script>
-  <script src="vendor/pdf-lib.min.js"></script>
-  <script src="app.js?v=20261023-3"></script>
-</body>
-</html>
+  <footer class="mobile-footer">Independent planning aid. SDDA remains the authority for official title approval.</footer>
+  <script src="vendor/xlsx.full.min.js"></script><script src="vendor/pdf-lib.min.js"></script><script src="app.js?v=20261027-9"></script>
+</body></html>

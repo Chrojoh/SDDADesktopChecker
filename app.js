@@ -2,7 +2,9 @@
 
 const COMPONENTS = ["Container", "Exterior", "Interior"];
 const LEVELS = ["Started", "Advanced", "Excellent", "Elite"];
-let titles = [], scores = [], trialDates = new Map(), dateMatches = 0, unmatchedTrials = [];
+const GAME_NAMES = ["Aerial", "Distance", "Speed", "Team"];
+let titles = [], scores = [], games = [], trialDates = new Map(), dateMatches = 0, unmatchedTrials = [];
+let currentPdfUrl = "";
 
 const $ = (id) => document.getElementById(id);
 const esc = (value) => String(value ?? "").replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[character]));
@@ -16,7 +18,7 @@ function dogDisplayName() {
 }
 function reportFileStem() {
   const dog = dogDisplayName().replace(/[\\/:*?"<>|]+/g, "-").replace(/\s+/g, " ");
-  return `${dog} - SDDA Title Tracker - ${localDateStamp()}`;
+  return `${dog} - SDDA Achievement Ledger - ${localDateStamp()}`;
 }
 
 function parseCsv(text) {
@@ -53,7 +55,8 @@ function tableFromRows(rows, headerTest) {
 
 async function parseAccountFile(file, headerTest, label) {
   const extension = file.name.split(".").pop().toLowerCase();
-  if (extension === "csv") {
+  const csvLike = extension === "csv" || /(?:text\/csv|application\/csv|text\/comma-separated-values)/i.test(file.type || "");
+  if (csvLike) {
     const parsed = parseCsv(await file.text());
     if (!headerTest(parsed.headers)) throw new Error(`That is not the ${label} file.`);
     return { ...parsed, sheetName: "CSV" };
@@ -76,7 +79,9 @@ function levelFrom(description) {
   return LEVELS.find((level) => new RegExp(level, "i").test(text)) || null;
 }
 function componentFrom(description) { return COMPONENTS.find((component) => new RegExp(component, "i").test(description)) || null; }
+function gameFrom(description) { const text = String(description || ""); return GAME_NAMES.find((game) => new RegExp(`(?:^|\\b)${game}(?:\\b|$)`, "i").test(text)) || null; }
 function titleText(title) { return `${title.description} ${title.honours}`.trim(); }
+function gamesTitleRecorded(game) { return titles.some((title) => new RegExp(`(?:^|\\b)${game}(?:\\b|$)|SD-G${game[0]}`, "i").test(titleText(title))); }
 function findTitle(pattern) { return titles.find((title) => pattern.test(titleText(title))); }
 function dateLabel(value) {
   if (!value) return "Date not supplied";
@@ -84,6 +89,15 @@ function dateLabel(value) {
 }
 function byLevel(level, list = scores) { return list.filter((score) => score.level === level); }
 function componentCounts(level, list = scores) { return Object.fromEntries(COMPONENTS.map((component) => [component, list.filter((score) => score.level === level && score.component === component).length])); }
+function gamePassCounts() { return Object.fromEntries(GAME_NAMES.map((game) => [game, games.filter((row) => row.game === game && row.pass).length])); }
+
+function renderGames() {
+  const counts = gamePassCounts(), total = Object.values(counts).reduce((sum, count) => sum + count, 0);
+  const titled = GAME_NAMES.filter((game) => counts[game] >= 3 || gamesTitleRecorded(game));
+  $("games-summary").innerHTML = `<span>${total} recorded Games pass${total === 1 ? "" : "es"}</span><span>${titled.length}/4 individual Games titles</span><span class="${titled.length >= 3 ? "gold" : ""}">${titled.length >= 3 ? "SD-GCH requirements shown as met" : `${Math.max(0, 3 - titled.length)} more Games title${3 - titled.length === 1 ? "" : "s"} needed for SD-GCH`}</span>`;
+  $("games-grid").innerHTML = GAME_NAMES.map((game) => { const passes = counts[game], recorded = gamesTitleRecorded(game), met = passes >= 3 || recorded; const details = game === "Aerial" ? "1 hide · 1 distractor · recommended 2 min; judge may adjust" : game === "Distance" ? "1 hide · no distractors · recommended 3 min; judge may adjust" : game === "Speed" ? "2–4 hides · 2–4 distractors · fixed 60 sec" : "2–5 hides · 2–4 distractors · recommended 5 min; judge may adjust"; return `<article class="game-card"><h3>${game} <small>SD-G${game[0]}</small></h3><span class="status ${met ? "met" : passes ? "partial" : "unknown"}">${met ? "Title achieved / shown as met" : passes ? "In progress" : "No pass data"}</span><div class="game-count"><strong>${passes}</strong><span>/ 3 passes</span></div><div class="game-meter" role="progressbar" aria-label="${esc(game)} passes" aria-valuemin="0" aria-valuemax="3" aria-valuenow="${Math.min(passes, 3)}"><i style="width:${Math.min(100, passes / 3 * 100)}%"></i></div><p>${details}</p>${recorded ? `<p><strong>Recorded in the Titles file.</strong></p>` : ""}</article>`; }).join("");
+  $("games-championships").innerHTML = `<h3>Games Championship ladder</h3><div class="game-ladder"><p><strong>SD-GCH</strong><span>Three passes earn each Games title; titles in any three Games earn SD-GCH.</span></p><p><strong>SD-GCH2</strong><span>Four additional passes in any three Games.</span></p><p><strong>SD-GCH3</strong><span>Five additional passes in any three Games.</span></p><p><strong>SD-GCH4</strong><span>Seven additional passes in any three Games.</span></p><p><strong>SD-GCH5</strong><span>Ten additional passes in all four Games.</span></p></div><p class="level-note">Higher Games Championships require passes following the previous championship. Without Games dates in the SDDA download, totals can be shown but passes cannot be reliably assigned to SD-GCH2 through SD-GCH5.</p>`;
+}
 
 function workbookDate(value) {
   const text = String(value ?? "").trim();
@@ -272,7 +286,19 @@ function render() {
   $("report").hidden = false;
   const dog = dogDisplayName(), number = scores[0]?.dogNumber || "not supplied";
   document.title = reportFileStem();
-  $("dog-name").textContent = dog; $("dog-meta").textContent = `SDDA #${number} · ${scores.length} qualifying component scores · ${titles.length ? `${titles.length} titles recorded by SDDA` : `${inferredTitles().length} titles calculated from scores`}`;
+  const summaryInferred = inferredTitles();
+  const summaryTitle = (pattern) => titles.find((title) => pattern.test(titleText(title))) || summaryInferred.find((title) => pattern.test(titleText(title)));
+  const summaryAdvanced = maximizeGoldCombinations("Advanced"), summaryExcellent = maximizeGoldCombinations("Excellent"), summaryElite = eliteSets();
+  const summaryCombined = [...summaryAdvanced, ...summaryExcellent], summaryGolds = summaryCombined.filter((set) => set.gold).length;
+  const scentAchieved = [
+    !!summaryTitle(/^Started(?:\s|$)/i), !!summaryTitle(/^Advanced(?:\s|$)/i), !!summaryTitle(/^Excellent(?:\s|$)/i),
+    !!summaryTitle(/^Elite(?:\s|$)/i) || summaryElite.length > 0,
+    !!championshipTitle("ch") || (summaryCombined.length >= 5 && summaryExcellent.length >= 2),
+    !!championshipTitle("mach") || (summaryCombined.length >= 10 && summaryExcellent.length >= 3 && summaryGolds >= 3),
+    !!championshipTitle("elch") || (summaryElite.length >= 5 && summaryElite.filter((set) => set.gold).length >= 2),
+    !!championshipTitle("gmch")
+  ].filter(Boolean).length;
+  $("dog-name").textContent = dog; $("dog-meta").textContent = `SDDA #${number} · ${scores.length} qualifying component scores · ${scentAchieved} scent titles achieved · ${8 - scentAchieved} in progress`;
   $("message").textContent = titles.length
     ? `${trialDates.size ? `The Trial Workbook supplied dates for ${dateMatches} score rows. ` : ""}Scores loaded; titles are confirmed by the optional SDDA Titles file.`
     : `${trialDates.size ? `The Trial Workbook supplied dates for ${dateMatches} score rows. ` : ""}Scores loaded without a Titles file. Achievements are calculated from score history and are not official confirmation.`;
@@ -363,10 +389,68 @@ function render() {
   $("excellent-gold-rows").innerHTML = combinationRows(excellentSetsList);
   $("elite-gold-summary").innerHTML = summary(elSets, "same-trial score");
   $("elite-gold-rows").innerHTML = elSets.map((set) => `<tr class="${set.gold ? "gold" : ""}"><td>Trial ${esc(set.trial || "—")}</td><td>${set.parts.Container.score}</td><td>${set.parts.Exterior.score}</td><td>${set.parts.Interior.score}</td><td>${set.total}</td><td>${classification(set.total)}</td></tr>`).join("") || `<tr><td colspan="6">No complete Elite same-trial scores are available.</td></tr>`;
+  renderGames();
+  renderMobileDashboard();
   document.querySelectorAll(".level-score-block table thead tr").forEach((row) => { const cells = row.querySelectorAll("th"); if (cells.length >= 4) { cells[1].textContent = "Container"; cells[2].textContent = "Exterior"; cells[3].textContent = "Interior"; } });
 
   const blanks = scores.filter((score) => !score.date).length;
   $("limits").innerHTML = `<h3>Verification limits in these downloads</h3><ul><li>The score download contains no judge column, so two-judge and three-judge championship requirements cannot be proven.</li>${dateMatches ? `<li>${dateMatches} missing Event Date value${dateMatches === 1 ? " was" : "s were"} filled by matching Trial Number in the official Trial Workbook.</li>` : ""}${blanks ? `<li>${blanks} score row${blanks === 1 ? " still has" : "s still have"} no Event Date.${unmatchedTrials.length ? ` Trial number${unmatchedTrials.length === 1 ? "" : "s"} not found in that workbook: ${unmatchedTrials.join(", ")}.` : ""} Higher championship calculations cannot reliably exclude scores earned on or before a previous title date.</li>` : ""}<li>This report treats rows in the Dog Scores download as qualifying scores, consistent with the supplied Gold-score instructions.</li><li>SDDA remains the authority for official title approval.</li></ul>`;
+}
+
+function renderMobileDashboard() {
+  const scentTarget = $("mobile-scent-titles");
+  if (!scentTarget) return;
+  const inferred = inferredTitles(), shown = displayedTitles();
+  const titleFor = (pattern) => shown.find((title) => pattern.test(titleText(title))) || inferred.find((title) => pattern.test(titleText(title)));
+  const reqList = (items) => `<ul class="requirement-list">${items.map((item) => `<li class="${item.done ? "done" : ""}">${esc(item.text)}</li>`).join("")}</ul>`;
+  const accordion = ({ name, subtitle, achieved, date, body, accent = "" }) => `<details class="title-accordion ${accent}"><summary><span class="summary-copy"><strong>${esc(name)}</strong><small>${esc(subtitle)}</small></span>${achieved ? (date ? `<span class="achievement-date">${esc(dateLabel(date))}</span>` : `<span class="achievement-check" aria-label="Achieved">✓</span>`) : ""}<span class="chevron" aria-hidden="true">⌄</span></summary><div class="accordion-body">${body}</div></details>`;
+  const levelTitles = [
+    { name: "Started", pattern: /^Started(?:\s|$)/i }, { name: "Advanced", pattern: /^Advanced(?:\s|$)/i },
+    { name: "Excellent", pattern: /^Excellent(?:\s|$)/i }, { name: "Elite", pattern: /^Elite(?:\s|$)/i, elite: true }
+  ];
+  const scentCards = levelTitles.map((entry) => {
+    const found = titleFor(entry.pattern), counts = componentCounts(entry.name), sameTrial = entry.elite ? eliteSets().length : 0;
+    const met = !!found || (entry.elite ? sameTrial > 0 : COMPONENTS.every((component) => counts[component] > 0));
+    const requirements = entry.elite
+      ? [{ done: !!titleFor(/^Excellent(?:\s|$)/i), text: "Excellent prerequisite" }, { done: sameTrial > 0, text: `${sameTrial} complete same-trial Elite score${sameTrial === 1 ? "" : "s"}` }]
+      : COMPONENTS.map((component) => ({ done: counts[component] > 0, text: `${component}: ${counts[component]} qualifying score${counts[component] === 1 ? "" : "s"}` }));
+    return accordion({ name: entry.name, subtitle: met ? "Achieved or requirements met" : "In progress", achieved: met, date: found?.date, body: reqList(requirements), accent: entry.elite ? "level-accent-elite" : "" });
+  });
+  const advanced = maximizeGoldCombinations("Advanced"), excellent = maximizeGoldCombinations("Excellent"), elite = eliteSets();
+  const total = advanced.length + excellent.length, gold = [...advanced, ...excellent].filter((set) => set.gold).length;
+  const championCards = [
+    { name: "SD-CH", found: championshipTitle("ch"), met: total >= 5 && excellent.length >= 2, items: [{ done: total >= 5, text: `${total}/5 Advanced or Excellent scores` }, { done: excellent.length >= 2, text: `${excellent.length}/2 must be Excellent` }] },
+    { name: "SD-MACH", found: championshipTitle("mach"), met: total >= 10 && excellent.length >= 3 && gold >= 3, items: [{ done: total >= 10, text: `${total}/10 Advanced or Excellent scores` }, { done: excellent.length >= 3, text: `${excellent.length}/3 must be Excellent` }, { done: gold >= 3, text: `${gold}/3 Gold scores` }] },
+    { name: "SD-ELCH", found: championshipTitle("elch"), met: elite.length >= 5 && elite.filter((set) => set.gold).length >= 2, items: [{ done: elite.length >= 5, text: `${elite.length}/5 complete Elite scores` }, { done: elite.filter((set) => set.gold).length >= 2, text: `${elite.filter((set) => set.gold).length}/2 Elite Gold scores` }, { done: false, text: "Two judges must be confirmed by SDDA" }] },
+    { name: "SD-GMCH", found: championshipTitle("gmch"), met: false, items: [{ done: !!championshipTitle("mach"), text: "SD-MACH required" }, { done: !!championshipTitle("elch"), text: "SD-ELCH required" }, { done: false, text: "Three judges must be confirmed by SDDA" }] }
+  ];
+  championCards.forEach((entry) => { const achieved = !!entry.found || entry.met; scentCards.push(accordion({ name: entry.name, subtitle: achieved ? "Achieved or requirements met" : "In progress", achieved, date: entry.found?.date, body: reqList(entry.items), accent: entry.name.includes("EL") || entry.name.includes("GMCH") ? "level-accent-elite" : entry.name.includes("MACH") ? "level-accent-gold" : "" })); });
+  scentTarget.innerHTML = scentCards.join("");
+
+  const runRows = (sets, isElite = false) => sets.length ? `<div class="run-grid">${sets.map((set) => { const c = isElite ? set.parts.Container.score : set.container.score, e = isElite ? set.parts.Exterior.score : set.exterior.score, i = isElite ? set.parts.Interior.score : set.interior.score; return `<div class="run-row ${set.gold ? "gold" : ""}"><b>${isElite ? `Trial ${esc(set.trial || "—")}` : set.special ? "SP" : `#${set.rank}`}</b><span>C ${c}</span><span>E ${e}</span><span>I ${i}</span><strong>${set.total}</strong></div>`; }).join("")}</div>` : `<p class="run-empty">No complete combinations yet.</p>`;
+  $("mobile-scent-runs").innerHTML = `<p class="sp-definition"><strong>SP = Special.</strong> Its three title-earning components stay together as one locked combination.</p>` + [
+    accordion({ name: "Advanced runs", subtitle: `${advanced.length} combinations · ${advanced.filter((set) => set.gold).length} Gold`, body: runRows(advanced), accent: "level-accent-silver" }),
+    accordion({ name: "Excellent runs", subtitle: `${excellent.length} combinations · ${excellent.filter((set) => set.gold).length} Gold`, body: `<p class="run-legend"><strong>SP = Special.</strong> Its three title-earning Excellent components stay together as one locked combination.</p>${runRows(excellent)}`, accent: "level-accent-gold" }),
+    accordion({ name: "Elite runs", subtitle: `${elite.length} same-trial scores · ${elite.filter((set) => set.gold).length} Gold`, body: runRows(elite, true), accent: "level-accent-elite" })
+  ].join("");
+
+  const gameCounts = gamePassCounts(), gameTargets = [];
+  $("mobile-game-titles").innerHTML = GAME_NAMES.map((game) => { const recorded = gamesTitleRecorded(game), met = recorded || gameCounts[game] >= 3; gameTargets.push({ name: `${game} (SD-G${game[0]})`, kind: "Games", needed: Math.max(0, 3 - gameCounts[game]), items: [`${gameCounts[game]}/3 passes`] }); return accordion({ name: `${game} · SD-G${game[0]}`, subtitle: `${gameCounts[game]}/3 passes`, achieved: met, date: titles.find((title) => new RegExp(game, "i").test(titleText(title)))?.date, body: reqList([{ done: met, text: `${gameCounts[game]}/3 qualifying passes` }]) }); }).join("");
+  const titledGames = GAME_NAMES.filter((game) => gamesTitleRecorded(game) || gameCounts[game] >= 3).length;
+  $("mobile-game-runs").innerHTML = accordion({ name: "SD-GCH ladder", subtitle: `${titledGames}/3 Games titles for SD-GCH`, achieved: titledGames >= 3, body: reqList([{ done: titledGames >= 3, text: `${titledGames}/3 individual Games titles for SD-GCH` }, { done: false, text: "Higher championships require passes after the previous title; dates may be needed" }]) });
+
+  const targets = [];
+  for (const level of ["Started", "Advanced", "Excellent"]) { if (titleFor(new RegExp(`^${level}(?:\\s|$)`, "i"))) continue; const counts = componentCounts(level), missing = COMPONENTS.filter((component) => !counts[component]); targets.push({ name: level, kind: "Scent", needed: missing.length, items: missing.map((component) => `${component} qualifying score`) }); }
+  const chNeeded = Math.max(0, 5 - total) + Math.max(0, 2 - excellent.length);
+  const machNeeded = Math.max(0, 10 - total) + Math.max(0, 3 - excellent.length) + Math.max(0, 3 - gold);
+  const elchNeeded = Math.max(0, 5 - elite.length) + Math.max(0, 2 - elite.filter((set) => set.gold).length);
+  if (!championshipTitle("ch") && chNeeded > 0) targets.push({ name: "SD-CH", kind: "Scent", needed: chNeeded, items: [`${Math.max(0, 5 - total)} more complete score combinations`, `${Math.max(0, 2 - excellent.length)} more Excellent combinations`] });
+  if (!championshipTitle("mach") && machNeeded > 0) targets.push({ name: "SD-MACH", kind: "Scent", needed: machNeeded, items: [`${Math.max(0, 10 - total)} more complete combinations`, `${Math.max(0, 3 - excellent.length)} more Excellent combinations`, `${Math.max(0, 3 - gold)} more Gold scores`] });
+  if (!championshipTitle("elch") && elchNeeded > 0) targets.push({ name: "SD-ELCH", kind: "Scent", needed: elchNeeded, items: [`${Math.max(0, 5 - elite.length)} more Elite scores`, `${Math.max(0, 2 - elite.filter((set) => set.gold).length)} more Elite Gold scores`, "Judge requirement needs SDDA confirmation"] });
+  gameTargets.filter((target) => target.needed > 0).forEach((target) => targets.push(target));
+  if (titledGames < 3) targets.push({ name: "SD-GCH", kind: "Games", needed: 3 - titledGames, items: [`${3 - titledGames} more individual Games title${3 - titledGames === 1 ? "" : "s"}`] });
+  targets.sort((a, b) => a.needed - b.needed || a.name.localeCompare(b.name));
+  $("mobile-next-list").innerHTML = targets.map((target) => `<article class="next-card"><header><div><h3>${esc(target.name)}</h3><p class="next-kind">${esc(target.kind)}</p></div><span class="remaining-badge">${target.needed} item${target.needed === 1 ? "" : "s"}</span></header><ol>${target.items.filter((item) => !/^0 more/i.test(item)).map((item) => `<li>${esc(item)}</li>`).join("")}</ol></article>`).join("") || `<article class="next-card"><h3>Everything shown is complete</h3><p>Check with SDDA for the next eligible extension.</p></article>`;
 }
 
 async function loadTitles(file) {
@@ -376,9 +460,11 @@ async function loadTitles(file) {
 }
 async function loadScores(file) {
   const parsed = await parseAccountFile(file, (headers) => headers.some((header) => /^description$/i.test(header)) && headers.some((header) => /maximum score/i.test(header)) && headers.some((header) => /^score$/i.test(header)), "Dog Scores");
-  scores = parsed.data.map((row, index) => { const description = String(row.Description || "").trim(), level = levelFrom(description), component = componentFrom(description), score = Number(row.Score); if (!level || !component || !Number.isFinite(score)) return null; return { sourceRow: index + 2, dogNumber: String(row["Dog Number"] || "").trim(), dog: String(row["Registered Name"] || "").trim(), trial: String(row["Trial Number"] || "").trim(), date: workbookDate(row["Event Date"]), description, level, component, score, maximum: Number(row["Maximum Score"]) }; }).filter(Boolean);
+  const standard = [], gameRows = [];
+  parsed.data.forEach((row, index) => { const description = String(row.Description || "").trim(), game = gameFrom(description); const common = { sourceRow: index + 2, dogNumber: String(row["Dog Number"] || "").trim(), dog: String(row["Registered Name"] || "").trim(), trial: String(row["Trial Number"] || "").trim(), date: workbookDate(row["Event Date"]), description }; if (game) { const result = String(row.Result ?? row.Status ?? row.Outcome ?? row.Score ?? "").trim(); const explicitFail = /^(?:fail|failed|no\s*pass|nq|no|0)$/i.test(result); gameRows.push({ ...common, game, pass: !explicitFail, result: result || "Qualifying row" }); return; } const level = levelFrom(description), component = componentFrom(description), score = Number(row.Score); if (level && component && Number.isFinite(score)) standard.push({ ...common, level, component, score, maximum: Number(row["Maximum Score"]) }); });
+  scores = standard; games = gameRows;
   if (trialDates.size) applyTrialDates();
-  $("scores-name").textContent = `${file.name} · ${scores.length} qualifying scores${parsed.sheetName === "CSV" ? "" : ` · ${parsed.sheetName}`}`; render();
+  $("scores-name").textContent = `${file.name} · ${scores.length} component scores${games.length ? ` · ${games.filter((row) => row.pass).length} Games passes` : ""}${parsed.sheetName === "CSV" ? "" : ` · ${parsed.sheetName}`}`; render();
 }
 
 async function loadTrialWorkbook(file) {
@@ -404,6 +490,11 @@ $("titles-file").addEventListener("change", async (event) => { try { if (event.t
 $("scores-file").addEventListener("change", async (event) => { try { if (event.target.files[0]) await loadScores(event.target.files[0]); } catch (error) { $("message").textContent = error.message; } });
 $("workbook-file").addEventListener("change", async (event) => { try { if (event.target.files[0]) await loadTrialWorkbook(event.target.files[0]); } catch (error) { $("message").textContent = `Trial Workbook import failed: ${error.message}`; } });
 
+document.querySelectorAll(".tracker-tab").forEach((button) => button.addEventListener("click", () => {
+  document.querySelectorAll(".tracker-tab").forEach((tab) => { const active = tab === button; tab.classList.toggle("active", active); tab.setAttribute("aria-selected", String(active)); });
+  document.querySelectorAll(".tracker-panel").forEach((panel) => { const active = panel.dataset.panel === button.dataset.tab; panel.hidden = !active; panel.classList.toggle("active", active); });
+}));
+
 async function downloadPdfReport() {
   if (!scores.length) return;
   const { PDFDocument, StandardFonts, rgb } = window.PDFLib;
@@ -414,7 +505,7 @@ async function downloadPdfReport() {
   let page, y;
   function newPage() {
     page = pdf.addPage(pageSize); y = 746;
-    page.drawText("SDDA Title Tracker", { x: margin, y: 765, size: 9, font: bold, color: rgb(.13, .37, .27) });
+    page.drawText("SDDA Achievement Ledger", { x: margin, y: 765, size: 9, font: bold, color: rgb(.36, .28, .48) });
     page.drawText(`Page ${pdf.getPageCount()}`, { x: 520, y: 765, size: 8, font: regular, color: rgb(.4, .45, .42) });
   }
   function wrap(text, maxWidth, font, size) {
@@ -468,12 +559,28 @@ async function downloadPdfReport() {
   text("The supplied Dog Scores download has no judge column. Judge-diversity requirements cannot be verified. Blank Event Date values prevent reliable score cutoffs for higher championship extensions. Titles calculated without the optional Dog Titles file are not official confirmation. Confirm eligibility with SDDA.", { size: 8, color: rgb(.35, .36, .34) });
   const bytes = await pdf.save();
   const blob = new Blob([bytes], { type: "application/pdf" });
-  const url = URL.createObjectURL(blob), link = document.createElement("a");
   const safeDog = dogDisplayName().replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "");
-  link.href = url; link.download = `${safeDog}-SDDA-title-report.pdf`; document.body.appendChild(link); link.click(); link.remove(); setTimeout(() => URL.revokeObjectURL(url), 2000);
+  const filename = `${safeDog}-SDDA-title-report-${localDateStamp()}.pdf`;
+  if (currentPdfUrl) URL.revokeObjectURL(currentPdfUrl);
+  currentPdfUrl = URL.createObjectURL(blob);
+  const ready = $("pdf-ready");
+  ready.href = currentPdfUrl; ready.download = filename; ready.target = "_blank"; ready.rel = "noopener"; ready.hidden = false;
+  ready.textContent = `${filename} — tap to open or download`;
+  ready.click();
+  return "ready";
 }
 
-$("print-button").addEventListener("click", () => {
-  document.title = reportFileStem();
-  window.print();
+$("print-button").addEventListener("click", async () => {
+  const button = $("print-button"), previous = button.textContent;
+  try {
+    button.disabled = true; button.textContent = "Creating PDF…";
+    await downloadPdfReport();
+    button.textContent = "PDF created below";
+  } catch (error) {
+    $("message").textContent = `PDF download failed: ${error.message}`;
+    button.textContent = "Try PDF download again";
+  } finally {
+    button.disabled = false;
+    setTimeout(() => { button.textContent = previous; }, 2500);
+  }
 });

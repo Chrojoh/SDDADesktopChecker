@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="900" viewBox="0 0 1400 900">
+  <rect width="1400" height="900" fill="#eef2ee"/>
+  <rect x="55" y="35" width="1290" height="830" rx="18" fill="#fff" stroke="#cad5cd" stroke-width="2"/>
+  <text x="90" y="78" font-family="Arial" font-size="17" font-weight="700" fill="#286448" letter-spacing="2">SDDA TITLE TRACKER</text>
+  <text x="90" y="125" font-family="Georgia" font-size="34" font-weight="700" fill="#17231d">Alphapack’s To Mend And Defend</text>
+  <text x="90" y="154" font-family="Arial" font-size="16" fill="#627068">SDDA #5138  ·  Report saved Oct. 25, 2026</text>
+  <text x="1250" y="96" text-anchor="end" font-family="Georgia" font-size="42" font-weight="700" fill="#9a6808">9 Gold</text>
+  <text x="1250" y="126" text-anchor="end" font-family="Arial" font-size="16" fill="#627068">10 combinations</text>
+  <line x1="90" y1="178" x2="1310" y2="178" stroke="#286448" stroke-width="4"/>
+
+  <g font-family="Arial">
+    <rect x="90" y="200" width="385" height="64" rx="8" fill="#e7f0ea"/><text x="112" y="227" font-size="15" fill="#627068">ADVANCED</text><text x="112" y="250" font-size="20" font-weight="700" fill="#17231d">7 scores</text><text x="449" y="246" text-anchor="end" font-size="19" font-weight="700" fill="#9a6808">6 Gold</text>
+    <rect x="492" y="200" width="385" height="64" rx="8" fill="#e7f0ea"/><text x="514" y="227" font-size="15" fill="#627068">EXCELLENT</text><text x="514" y="250" font-size="20" font-weight="700" fill="#17231d">3 scores</text><text x="851" y="246" text-anchor="end" font-size="19" font-weight="700" fill="#9a6808">2 Gold</text>
+    <rect x="894" y="200" width="416" height="64" rx="8" fill="#e7f0ea"/><text x="916" y="227" font-size="15" fill="#627068">ELITE</text><text x="916" y="250" font-size="20" font-weight="700" fill="#17231d">5 same-trial scores</text><text x="1284" y="246" text-anchor="end" font-size="19" font-weight="700" fill="#9a6808">2 Gold</text>
+  </g>
+
+  <g font-family="Arial">
+    <text x="90" y="310" font-size="17" font-weight="700" fill="#286448">TITLES &amp; NEXT REQUIREMENTS</text>
+    <line x1="90" y1="326" x2="530" y2="326" stroke="#d5ddd7"/>
+    <text x="90" y="358" font-size="17" font-weight="700" fill="#17231d">Started, Advanced, Excellent</text><text x="90" y="382" font-size="15" fill="#627068">Recorded titles</text>
+    <text x="90" y="426" font-size="17" font-weight="700" fill="#17231d">SD-MACH</text><text x="505" y="426" text-anchor="end" font-size="16" fill="#286448">Requirements met*</text>
+    <line x1="90" y1="444" x2="530" y2="444" stroke="#d5ddd7"/>
+    <text x="90" y="478" font-size="17" font-weight="700" fill="#17231d">SD-ELCH</text><text x="505" y="478" text-anchor="end" font-size="16" fill="#286448">Scores met*</text>
+    <text x="90" y="514" font-size="14" fill="#627068">*Judge diversity must be confirmed with SDDA.</text>
+  </g>
+
+  <g font-family="Arial" fill="#17231d">
+    <text x="575" y="310" font-size="17" font-weight="700" fill="#286448">ADVANCED COMBINATIONS</text>
+    <text x="785" y="310" font-size="14" fill="#627068">Container · Exterior · Interior</text>
+    <rect x="575" y="326" width="735" height="38" fill="#f1f4f1"/><text x="592" y="351" font-size="14" font-weight="700">Combination</text><text x="835" y="351" font-size="14" font-weight="700">Components</text><text x="1275" y="351" text-anchor="end" font-size="14" font-weight="700">Result</text>
+    <text x="592" y="396" font-size="16">SP · Trial 171</text><text x="835" y="396" font-size="16">56 · 58 · 80</text><text x="1275" y="396" text-anchor="end" font-size="17" font-weight="700" fill="#9a6808">194 Gold</text><line x1="575" y1="412" x2="1310" y2="412" stroke="#d5ddd7"/>
+    <text x="592" y="444" font-size="16">Mix 1</text><text x="835" y="444" font-size="16">60 · 60 · 79</text><text x="1275" y="444" text-anchor="end" font-size="17" font-weight="700" fill="#9a6808">199 Gold</text><line x1="575" y1="460" x2="1310" y2="460" stroke="#d5ddd7"/>
+    <text x="592" y="492" font-size="16">Mix 2</text><text x="835" y="492" font-size="16">59 · 60 · 78</text><text x="1275" y="492" text-anchor="end" font-size="17" font-weight="700" fill="#9a6808">197 Gold</text>
+  </g>
+
+  <g font-family="Arial" fill="#17231d">
+    <text x="90" y="584" font-size="17" font-weight="700" fill="#286448">EXCELLENT COMBINATIONS</text><text x="340" y="584" font-size="14" fill="#627068">C · E · I</text>
+    <rect x="90" y="602" width="575" height="42" fill="#f1f4f1"/><text x="110" y="629" font-size="15" font-weight="700">#</text><text x="245" y="629" font-size="15" font-weight="700">Components</text><text x="640" y="629" text-anchor="end" font-size="15" font-weight="700">Result</text>
+    <text x="110" y="677" font-size="16">1</text><text x="245" y="677" font-size="16">56 · 58 · 79</text><text x="640" y="677" text-anchor="end" font-size="17" font-weight="700" fill="#9a6808">193 Gold</text>
+    <text x="110" y="718" font-size="16">2</text><text x="245" y="718" font-size="16">57 · 57 · 78</text><text x="640" y="718" text-anchor="end" font-size="17" font-weight="700" fill="#9a6808">192 Gold</text>
+    <text x="110" y="759" font-size="16">3</text><text x="245" y="759" font-size="16">56 · 56 · 76</text><text x="640" y="759" text-anchor="end" font-size="17" font-weight="700" fill="#627068">188 Silver</text>
+
+    <text x="720" y="584" font-size="17" font-weight="700" fill="#286448">ELITE · SAME TRIAL</text><text x="920" y="584" font-size="14" fill="#627068">C · E · I</text>
+    <rect x="720" y="602" width="590" height="42" fill="#f1f4f1"/><text x="740" y="629" font-size="15" font-weight="700">Trial</text><text x="915" y="629" font-size="15" font-weight="700">Components</text><text x="1280" y="629" text-anchor="end" font-size="15" font-weight="700">Result</text>
+    <text x="740" y="677" font-size="16">404</text><text x="915" y="677" font-size="16">58 · 58 · 78</text><text x="1280" y="677" text-anchor="end" font-size="17" font-weight="700" fill="#9a6808">194 Gold</text>
+    <text x="740" y="718" font-size="16">469</text><text x="915" y="718" font-size="16">58 · 58 · 78</text><text x="1280" y="718" text-anchor="end" font-size="17" font-weight="700" fill="#9a6808">194 Gold</text>
+    <text x="740" y="759" font-size="16">540</text><text x="915" y="759" font-size="16">55 · 57 · 77</text><text x="1280" y="759" text-anchor="end" font-size="17" font-weight="700" fill="#627068">189 Silver</text>
+  </g>
+  <line x1="90" y1="806" x2="1310" y2="806" stroke="#d5ddd7"/>
+  <text x="90" y="835" font-family="Arial" font-size="14" fill="#627068">Compact ledger mockup · designed to place the main report on one portrait page</text>
+</svg>
