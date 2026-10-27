@@ -19,8 +19,8 @@
 
   <main class="desktop-shell">
     <section class="desktop-upload-row">
-      <label class="score-upload desktop-upload"><span class="upload-icon">↑</span><span><strong>Upload Dog Scores</strong><small>Choose the XLSX or CSV downloaded for one registered dog</small></span><input id="scores-file" type="file"></label>
-      <div class="upload-copy"><p id="scores-name" class="file-name">No score file selected.</p><p class="privacy-line">The file is processed locally and cleared when the page closes.</p><div id="message" class="message">Upload a Dog Scores file to begin.</div></div>
+      <div class="desktop-file-stack"><label class="score-upload desktop-upload"><span class="upload-icon">↑</span><span><strong>Upload Dog Scores</strong><small>Choose the XLSX or CSV downloaded for one registered dog</small></span><input id="scores-file" type="file"></label><label class="score-upload desktop-upload titles-upload"><span class="upload-icon">T</span><span><strong>Optional — Upload Dog Titles</strong><small>Add the XLSX or CSV to confirm recorded titles and title dates</small></span><input id="titles-file" type="file"></label></div>
+      <div class="upload-copy"><p id="scores-name" class="file-name">No score file selected.</p><p id="titles-name" class="file-name">No Titles file selected.</p><p class="privacy-line">The files are processed locally and cleared when the page closes.</p><div id="message" class="message">Upload a Dog Scores file to begin. The Titles file is optional.</div></div>
     </section>
 
     <section id="report" class="desktop-report" hidden>
@@ -52,8 +52,8 @@
 
       <div class="legacy-output" aria-hidden="true"><div id="achieved"></div><div id="progress"></div><div id="games-summary"></div><div id="games-grid"></div><div id="games-championships"></div><div id="advanced-gold-summary"></div><table><tbody id="advanced-gold-rows"></tbody></table><div id="excellent-gold-summary"></div><table><tbody id="excellent-gold-rows"></tbody></table><div id="elite-gold-summary"></div><table><tbody id="elite-gold-rows"></tbody></table><div id="limits"></div></div>
     </section>
-    <div hidden><input id="titles-file" type="file"><span id="titles-name"></span><input id="workbook-file" type="file"><span id="workbook-name"></span></div>
+    <div hidden><input id="workbook-file" type="file"><span id="workbook-name"></span></div>
   </main>
   <footer class="mobile-footer">Independent planning aid. SDDA remains the authority for official title approval.</footer>
-  <script src="vendor/xlsx.full.min.js"></script><script src="vendor/pdf-lib.min.js"></script><script src="app.js?v=20261027-9"></script>
+  <script src="vendor/xlsx.full.min.js"></script><script src="vendor/pdf-lib.min.js"></script><script src="app.js?v=20261027-10"></script>
 </body></html>
