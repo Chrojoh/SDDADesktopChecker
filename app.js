@@ -310,7 +310,7 @@ function machExtensionProgress(rule, previous) {
 }
 
 function render() {
-  if (!scores.length) { $("report").hidden = true; return; }
+  if (!scores.length && !games.length) { $("report").hidden = true; return; }
   const dogNumbers = [...new Set(scores.map((score) => score.dogNumber).filter(Boolean))];
   if (dogNumbers.length > 1) { $("message").textContent = "The score file contains more than one dog. Please download and upload one dog's history at a time."; $("report").hidden = true; return; }
   $("report").hidden = false;
