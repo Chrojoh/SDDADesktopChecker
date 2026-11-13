@@ -101,48 +101,54 @@ function validComponentScore(level, component, value) {
 }
 
 
+
 function renderGames() {
     const counts = gamePassCounts();
     const total = Object.values(counts).reduce((sum, count) => sum + count, 0);
 
     const titled = GAME_NAMES.filter(
-        (game) => counts[game] >= 3 || gamesTitleRecorded(game)
+        game => counts[game] >= 3 || gamesTitleRecorded(game)
     );
 
-    $("games-summary").innerHTML =
-        `<span>${total} recorded Games passes</span>
+    $("games-summary").innerHTML = `
+        <span>${total} recorded Games passes</span>
         <span>${titled.length}/4 individual Games titles</span>
         <span class="${titled.length >= 3 ? "gold" : ""}">
-        ${titled.length >= 3 ? "SD-GCH requirements shown as met" :
-        `${Math.max(0, 3 - titled.length)} more Games titles needed for SD-GCH`}
+            ${titled.length >= 3
+                ? "SD-GCH requirements shown as met"
+                : `${Math.max(0, 3 - titled.length)} more Games titles needed for SD-GCH`}
         </span>`;
 
-    $("games-grid").innerHTML = GAME_NAMES.map((game) => {
+    $("games-grid").innerHTML = GAME_NAMES.map(game => {
         const passes = counts[game];
         const entries = games.filter(row => row.game === game);
         const fails = entries.filter(row => !row.pass).length;
         const recorded = gamesTitleRecorded(game);
         const met = passes >= 3 || recorded;
 
-        const details =
-            game === "Aerial" ? "1 hide · 1 distractor · recommended 2 min; judge may adjust" :
-            game === "Distance" ? "1 hide · no distractors · recommended 3 min; judge may adjust" :
-            game === "Speed" ? "2–4 hides · 2–4 distractors · fixed 60 sec" :
-            "2–5 hides · 2–4 distractors · recommended 5 min; judge may adjust";
+        const details = game === "Aerial"
+            ? "1 hide · 1 distractor · recommended 2 min; judge may adjust"
+            : game === "Distance"
+            ? "1 hide · no distractors · recommended 3 min; judge may adjust"
+            : game === "Speed"
+            ? "2–4 hides · 2–4 distractors · fixed 60 sec"
+            : "2–5 hides · 2–4 distractors · recommended 5 min; judge may adjust";
 
         const attemptRows = entries.map(row => `
             <div class="game-attempt">
-                <span>${esc(dateLabel(row.date))}</span>
-                <span>Trial ${esc(row.trial || "—")}</span>
-                <strong class="${row.pass ? "gold" : ""}">
-                    ${row.pass ? "PASS" : "FAIL"}
+                <span class="game-attempt-date">${esc(dateLabel(row.date))}</span>
+                <span class="game-attempt-trial">
+                    Trial ${esc(row.trial || "—")}
+                </span>
+                <strong class="game-result ${row.pass ? "pass" : "fail"}">
+                    ${row.pass ? "Q / PASS" : "FAIL"}
                 </strong>
             </div>
         `).join("");
 
         return `
             <article class="game-card">
-                <h3>${game} <small>SD-G${game[0]}</small></h3>
+                <h3>${esc(game)} <small>SD-G${game[0]}</small></h3>
 
                 <span class="status ${met ? "met" : passes ? "partial" : "unknown"}">
                     ${met ? "Title achieved / shown as met" :
@@ -154,7 +160,8 @@ function renderGames() {
                     <span>/ 3 passes</span>
                 </div>
 
-                <div class="game-meter" role="progressbar"
+                <div class="game-meter"
+                    role="progressbar"
                     aria-label="${esc(game)} passes"
                     aria-valuemin="0"
                     aria-valuemax="3"
@@ -165,18 +172,36 @@ function renderGames() {
                 <p>${details}</p>
 
                 <div class="game-history">
-                    <h4>Recorded Games results</h4>
-                    <p>${passes} passes · ${fails} failures · ${entries.length} total entries</p>
-                    ${attemptRows || "<p>No Games entries recorded.</p>"}
+                    <h4>Qualifying Games history</h4>
+
+                    <div class="game-history-summary">
+                        <span>${passes} Qs / passes</span>
+                        <span>${fails} failures</span>
+                        <span>${entries.length} attempts</span>
+                    </div>
+
+                    <div class="game-attempt-header">
+                        <span>Date</span>
+                        <span>Trial</span>
+                        <span>Result</span>
+                    </div>
+
+                    ${attemptRows || `
+                        <p class="game-history-empty">
+                            No Games attempts recorded.
+                        </p>
+                    `}
                 </div>
 
-                ${recorded ? "<p><strong>Recorded in the Titles file.</strong></p>" : ""}
+                ${recorded
+                    ? `<p><strong>Recorded in the Titles file.</strong></p>`
+                    : ""}
             </article>
         `;
     }).join("");
 
-    $("games-championships").innerHTML =
-        `<h3>Games Championship ladder</h3>
+    $("games-championships").innerHTML = `
+        <h3>Games Championship ladder</h3>
         <div class="game-ladder">
             <p><strong>SD-GCH</strong><span>Three passes earn each Games title; titles in any three Games earn SD-GCH.</span></p>
             <p><strong>SD-GCH2</strong><span>Four additional passes in any three Games.</span></p>
@@ -185,11 +210,11 @@ function renderGames() {
             <p><strong>SD-GCH5</strong><span>Ten additional passes in all four Games.</span></p>
         </div>
         <p class="level-note">
-            Without Games dates in the SDDA download, totals can be shown
-            but passes cannot be reliably assigned to SD-GCH2 through SD-GCH5.
+            Higher Games Championships require passes following the previous championship.
+            Without Games dates in the SDDA download, totals can be shown but passes
+            cannot be reliably assigned to SD-GCH2 through SD-GCH5.
         </p>`;
 }
-
 
 function workbookDate(value) {
   const text = String(value ?? "").trim();
