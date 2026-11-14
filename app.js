@@ -12,8 +12,9 @@ function localDateStamp(date = new Date()) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }
 function dogDisplayName() {
-  const raw = String(scores[0]?.dog || "").trim();
-  const number = String(scores[0]?.dogNumber || "").trim();
+  const first = scores[0] || games[0] || {};
+  const raw = String(first.dog || "").trim();
+  const number = String(first.dogNumber || "").trim();
   return raw && !/^(?:n\/?a|na|unknown|null|none|-+)$/i.test(raw) ? raw : number ? `SDDA dog #${number}` : "SDDA dog";
 }
 function reportFileStem() {
@@ -79,7 +80,14 @@ function levelFrom(description) {
   return LEVELS.find((level) => new RegExp(level, "i").test(text)) || null;
 }
 function componentFrom(description) { return COMPONENTS.find((component) => new RegExp(component, "i").test(description)) || null; }
-function gameFrom(description) { const text = String(description || ""); return GAME_NAMES.find((game) => new RegExp(`(?:^|\\b)${game}(?:\\b|$)`, "i").test(text)) || null; }
+function gameFrom(description) {
+  const text = String(description || "");
+  const match = text.match(/\bGames?\s*[-:]\s*(Aerial|Distance|Speed|Teams?)\b/i)
+    || text.match(/\b(Aerial|Distance|Speed|Teams?)\s+Games?\b/i);
+  if (!match) return null;
+  const name = match[1].toLowerCase();
+  return name.startsWith("team") ? "Team" : name[0].toUpperCase() + name.slice(1);
+}
 function titleText(title) { return `${title.description} ${title.honours}`.trim(); }
 function gameTitleRecord(game) { const codes = { Aerial: "GA", Distance: "GD", Speed: "GS", Team: "GT" }; return titles.find((title) => new RegExp(`(?:^|\\b)${game}(?:\\s+Games)?(?:\\b|$)|SD-${codes[game]}(?:\\b|$)`, "i").test(titleText(title))); }
 function gamesTitleRecorded(game) { return !!gameTitleRecord(game); }
@@ -90,7 +98,23 @@ function dateLabel(value) {
 }
 function byLevel(level, list = scores) { return list.filter((score) => score.level === level); }
 function componentCounts(level, list = scores) { return Object.fromEntries(COMPONENTS.map((component) => [component, list.filter((score) => score.level === level && score.component === component).length])); }
-function gamePassCounts() { return Object.fromEntries(GAME_NAMES.map((game) => [game, games.filter((row) => row.game === game && row.pass).length])); }
+function gamePassCounts() {
+  // Every row listed in Dog Scores for a recognized Game is one pass/Q.
+  // Score, Result, and Status values do not change that interpretation.
+  return Object.fromEntries(GAME_NAMES.map((game) => [game, games.filter((row) => row.game === game).length]));
+}
+const GAME_CHAMPIONSHIP_RULES = [
+  { key: "gch", name: "SD-GCH", thresholds: [3, 3, 3], text: "At least 3 passes in any 3 Games" },
+  { key: "gch2", name: "SD-GCH2", thresholds: [7, 7, 7], text: "At least 7 passes in any 3 Games" },
+  { key: "gch3", name: "SD-GCH3", thresholds: [12, 12, 12], text: "At least 12 passes in any 3 Games" },
+  { key: "gch4", name: "SD-GCH4", thresholds: [19, 19, 19], text: "At least 19 passes in any 3 Games" },
+  { key: "gch5", name: "SD-GCH5", thresholds: [29, 29, 29, 10], text: "At least 29 passes in any 3 Games and 10 in the fourth Game" }
+];
+function gameChampionshipProgress(counts, rule) {
+  const ordered = Object.values(counts).sort((a, b) => b - a);
+  const remaining = rule.thresholds.reduce((sum, threshold, index) => sum + Math.max(0, threshold - (ordered[index] || 0)), 0);
+  return { met: remaining === 0, remaining, ordered };
+}
 function validComponentScore(level, component, value) {
   const text = String(value ?? "").trim();
   if (!text) return false;
@@ -103,108 +127,71 @@ function validComponentScore(level, component, value) {
 
 
 function renderGames() {
-    const counts = gamePassCounts();
-    const total = Object.values(counts).reduce((sum, count) => sum + count, 0);
+  const counts = gamePassCounts();
+  const total = Object.values(counts).reduce((sum, count) => sum + count, 0);
+  const titled = GAME_NAMES.filter((game) => counts[game] >= 3);
+  const championshipProgress = GAME_CHAMPIONSHIP_RULES.map((rule) => ({ rule, ...gameChampionshipProgress(counts, rule) }));
 
-    const titled = GAME_NAMES.filter(
-        game => counts[game] >= 3 || gamesTitleRecorded(game)
-    );
+  $("games-summary").innerHTML = `
+    <span>${total} Games passes / Qs</span>
+    <span>${titled.length}/4 individual Games titles earned under current rules</span>
+    <span class="${championshipProgress[0].met ? "gold" : ""}">
+      ${championshipProgress[0].met ? "SD-GCH pass requirements met" : `${championshipProgress[0].remaining} more pass(es) needed for SD-GCH`}
+    </span>`;
 
-    $("games-summary").innerHTML = `
-        <span>${total} recorded Games passes</span>
-        <span>${titled.length}/4 individual Games titles</span>
-        <span class="${titled.length >= 3 ? "gold" : ""}">
-            ${titled.length >= 3
-                ? "SD-GCH requirements shown as met"
-                : `${Math.max(0, 3 - titled.length)} more Games titles needed for SD-GCH`}
-        </span>`;
+  $("games-grid").innerHTML = GAME_NAMES.map((game) => {
+    const passes = counts[game];
+    const entries = games.filter((row) => row.game === game);
+    const recorded = gameTitleRecord(game);
+    const met = passes >= 3;
+    const details = game === "Aerial"
+      ? "1 hide · 1 distractor · recommended 2 min; judge may adjust"
+      : game === "Distance"
+      ? "1 hide · no distractors · recommended 3 min; judge may adjust"
+      : game === "Speed"
+      ? "2–4 hides · 2–4 distractors · fixed 60 sec"
+      : "2–5 hides · 2–4 distractors · recommended 5 min; judge may adjust";
+    const attemptRows = entries.map((row) => `
+      <div class="game-attempt">
+        <span class="game-attempt-date">${esc(dateLabel(row.date))}</span>
+        <span class="game-attempt-trial">Trial ${esc(row.trial || "—")}</span>
+        <strong class="game-result pass">Q / PASS</strong>
+      </div>`).join("");
 
-    $("games-grid").innerHTML = GAME_NAMES.map(game => {
-        const passes = counts[game];
-        const entries = games.filter(row => row.game === game);
-        const fails = entries.filter(row => !row.pass).length;
-        const recorded = gamesTitleRecorded(game);
-        const met = passes >= 3 || recorded;
-
-        const details = game === "Aerial"
-            ? "1 hide · 1 distractor · recommended 2 min; judge may adjust"
-            : game === "Distance"
-            ? "1 hide · no distractors · recommended 3 min; judge may adjust"
-            : game === "Speed"
-            ? "2–4 hides · 2–4 distractors · fixed 60 sec"
-            : "2–5 hides · 2–4 distractors · recommended 5 min; judge may adjust";
-
-        const attemptRows = entries.map(row => `
-            <div class="game-attempt">
-                <span class="game-attempt-date">${esc(dateLabel(row.date))}</span>
-                <span class="game-attempt-trial">
-                    Trial ${esc(row.trial || "—")}
-                </span>
-                <strong class="game-result ${row.pass ? "pass" : "fail"}">
-                    ${row.pass ? "Q / PASS" : "FAIL"}
-                </strong>
-            </div>
-        `).join("");
-
-        return `
-            <article class="game-card">
-                <h3>${esc(game)} <small>SD-G${game[0]}</small></h3>
-
-                <span class="status ${met ? "met" : passes ? "partial" : "unknown"}">
-                    ${met ? "Title achieved / shown as met" :
-                    passes ? "In progress" : "No pass data"}
-                </span>
-
-                <div class="game-count">
-                    <strong>${passes}</strong>
-                    <span>/ 3 passes</span>
-                </div>
-
-                <p>${details}</p>
-
-                <div class="game-history">
-                    <h4>Qualifying Games history</h4>
-
-                    <div class="game-history-summary">
-                        <span>${passes} Qs / passes</span>
-                        <span>${fails} failures</span>
-                        <span>${entries.length} attempts</span>
-                    </div>
-
-                    <div class="game-attempt-header">
-                        <span>Date</span>
-                        <span>Trial</span>
-                        <span>Result</span>
-                    </div>
-
-                    ${attemptRows || `
-                        <p class="game-history-empty">
-                            No Games attempts recorded.
-                        </p>
-                    `}
-                </div>
-
-                ${recorded
-                    ? `<p><strong>Recorded in the Titles file.</strong></p>`
-                    : ""}
-            </article>
-        `;
-    }).join("");
-
-    $("games-championships").innerHTML = `
-        <h3>Games Championship ladder</h3>
-        <div class="game-ladder">
-            <p><strong>SD-GCH</strong><span>Three passes earn each Games title; titles in any three Games earn SD-GCH.</span></p>
-            <p><strong>SD-GCH2</strong><span>Four additional passes in any three Games.</span></p>
-            <p><strong>SD-GCH3</strong><span>Five additional passes in any three Games.</span></p>
-            <p><strong>SD-GCH4</strong><span>Seven additional passes in any three Games.</span></p>
-            <p><strong>SD-GCH5</strong><span>Ten additional passes in all four Games.</span></p>
+    return `
+      <article class="game-card">
+        <h3>${esc(game)} <small>SD-G${game[0]}</small></h3>
+        <span class="status ${met ? "met" : passes ? "partial" : "unknown"}">
+          ${met ? "Current-rule title requirements met" : passes ? "In progress" : "No pass data"}
+        </span>
+        <div class="game-count"><strong>${passes}</strong><span>/ 3 passes</span></div>
+        <p>${details}</p>
+        <div class="game-history">
+          <h4>Games pass history</h4>
+          <div class="game-history-summary">
+            <span>${passes} Qs / passes</span><span>0 failures counted</span><span>${entries.length} listed entries</span>
+          </div>
+          <div class="game-attempt-header"><span>Date</span><span>Trial</span><span>Result</span></div>
+          ${attemptRows || `<p class="game-history-empty">No Games entries recorded.</p>`}
         </div>
-        <p class="level-note">
-            Higher Games Championships require passes following the previous championship.
-            Without Games dates in the SDDA download, totals can be shown but passes
-            cannot be reliably assigned to SD-GCH2 through SD-GCH5.
-        </p>`;
+        ${recorded ? `<p><strong>Historical title record:</strong> ${esc(dateLabel(recorded.date))}. This record is displayed for reference only and does not replace the current-rule pass calculation.</p>` : ""}
+      </article>`;
+  }).join("");
+
+  $("games-championships").innerHTML = `
+    <h3>Games Championship progress · July 2026 requirements</h3>
+    <div class="game-ladder">
+      ${championshipProgress.map(({ rule, met, remaining }) => `
+        <p><strong>${rule.name}</strong>
+          <span>${rule.text}</span>
+          <span class="${met ? "status met" : "status partial"}">${met ? "Pass requirements met" : `${remaining} more pass(es) needed`}</span>
+        </p>`).join("")}
+    </div>
+    <p class="level-note">
+      All listed Games rows are counted as passes, including rows with a zero or blank score.
+      Historical Games titles in the Titles file are shown for reference but are not used to satisfy these calculations.
+      Passes are recalculated cumulatively under the current requirements; no historical reset or title-date cutoff is applied.
+    </p>`;
 }
 
 function workbookDate(value) {
@@ -410,10 +397,10 @@ function machExtensionProgress(rule, previous) {
 
 function render() {
   if (!scores.length && !games.length) { $("report").hidden = true; return; }
-  const dogNumbers = [...new Set(scores.map((score) => score.dogNumber).filter(Boolean))];
+  const dogNumbers = [...new Set([...scores, ...games].map((row) => row.dogNumber).filter(Boolean))];
   if (dogNumbers.length > 1) { $("message").textContent = "The score file contains more than one dog. Please download and upload one dog's history at a time."; $("report").hidden = true; return; }
   $("report").hidden = false;
-  const dog = dogDisplayName(), number = scores[0]?.dogNumber || "not supplied";
+  const dog = dogDisplayName(), number = (scores[0] || games[0])?.dogNumber || "not supplied";
   document.title = reportFileStem();
   const summaryInferred = inferredTitles();
   const summaryTitle = (pattern) => titles.find((title) => pattern.test(titleText(title))) || summaryInferred.find((title) => pattern.test(titleText(title)));
@@ -597,25 +584,30 @@ function renderMobileDashboard() {
   ].join("");
 
   const gameCounts = gamePassCounts(), gameTargets = [];
-  $("mobile-game-titles").innerHTML = GAME_NAMES.map((game) => { const title = gameTitleRecord(game), recorded = !!title, met = recorded || gameCounts[game] >= 3; gameTargets.push({ name: `${game} (SD-G${game[0]})`, kind: "Games", needed: recorded ? 0 : Math.max(0, 3 - gameCounts[game]), items: [recorded ? `Recorded ${dateLabel(title.date)}` : `${gameCounts[game]}/3 passes`] }); return accordion({ name: `${game} · SD-G${game[0]}`, subtitle: recorded ? "Recorded title" : `${gameCounts[game]}/3 passes`, achieved: met, date: title?.date, body: reqList([{ done: met, text: recorded ? `Title awarded ${dateLabel(title.date)}` : `${gameCounts[game]}/3 qualifying passes` }]) }); }).join("");
-  const titledGames = GAME_NAMES.filter((game) => gamesTitleRecorded(game) || gameCounts[game] >= 3).length;
-  const sortedPasses = Object.values(gameCounts).sort((a, b) => b - a);
-  const gchRules = [
-    { key: "gch", name: "SD-GCH", thresholds: [3, 3, 3], text: "An individual title in any three Games" },
-    { key: "gch2", name: "SD-GCH2", thresholds: [7, 7, 7], text: "Four additional passes in any three Games" },
-    { key: "gch3", name: "SD-GCH3", thresholds: [12, 12, 12], text: "Five additional passes in any three Games" },
-    { key: "gch4", name: "SD-GCH4", thresholds: [19, 19, 19], text: "Seven additional passes in any three Games" },
-    { key: "gch5", name: "SD-GCH5", thresholds: [29, 29, 29, 10], text: "Ten additional passes in all four Games" }
-  ];
-  $("mobile-game-runs").innerHTML = gchRules.map((rule) => {
-    const found = championshipTitle(rule.key);
-    if (rule.key === "gch") {
-      const neededTitles = Math.max(0, 3 - titledGames);
-      return accordion({ name: rule.name, subtitle: found ? "Recorded title" : `${titledGames}/3 individual Games titles`, achieved: !!found || titledGames >= 3, date: found?.date, body: reqList([{ done: titledGames >= 3 || !!found, text: `${titledGames}/3 individual Games titles completed` }, { done: !!found, text: found ? `Title awarded ${dateLabel(found.date)}` : `${neededTitles} more individual Games title${neededTitles === 1 ? "" : "s"} needed` }]), accent: "level-accent-elite" });
-    }
-    const needed = rule.thresholds.reduce((sum, threshold, index) => sum + Math.max(0, threshold - (sortedPasses[index] || 0)), 0);
-    return accordion({ name: rule.name, subtitle: found ? "Recorded title" : `${needed} estimated pass${needed === 1 ? "" : "es"} remaining`, achieved: !!found, date: found?.date, body: reqList([{ done: !!found, text: rule.text }, { done: false, text: "Banked passes may be used; the Titles file confirms the official award" }]), accent: "level-accent-elite" });
+  $("mobile-game-titles").innerHTML = GAME_NAMES.map((game) => {
+    const historical = gameTitleRecord(game);
+    const met = gameCounts[game] >= 3;
+    gameTargets.push({ name: `${game} (SD-G${game[0]})`, kind: "Games", needed: Math.max(0, 3 - gameCounts[game]), items: [`${gameCounts[game]}/3 current-rule passes`] });
+    const details = [{ done: met, text: `${gameCounts[game]}/3 passes required for the individual title` }];
+    if (historical) details.push({ done: false, text: `Historical Titles-file entry dated ${dateLabel(historical.date)}; not used in the current-rule calculation` });
+    return accordion({ name: `${game} · SD-G${game[0]}`, subtitle: met ? "Current-rule pass requirement met" : `${gameCounts[game]}/3 passes`, achieved: met, body: reqList(details) });
   }).join("");
+
+  const gameChampionships = GAME_CHAMPIONSHIP_RULES.map((rule) => ({ rule, ...gameChampionshipProgress(gameCounts, rule) }));
+  $("mobile-game-runs").innerHTML = gameChampionships.map(({ rule, met, remaining }) =>
+    accordion({
+      name: rule.name,
+      subtitle: met ? "Current-rule pass requirements met" : `${remaining} more pass(es) needed`,
+      achieved: met,
+      body: reqList([
+        { done: met, text: rule.text },
+        { done: true, text: "All historical Games entries are counted as passes under the July 2026 requirements." }
+      ]),
+      accent: "level-accent-elite"
+    })
+  ).join("");
+
+
 
   const targets = [];
   for (const level of ["Started", "Advanced", "Excellent"]) { if (titleFor(new RegExp(`^${level}(?:\\s|$)`, "i"))) continue; const counts = componentCounts(level), missing = COMPONENTS.filter((component) => !counts[component]); targets.push({ name: level, kind: "Scent", needed: missing.length, items: missing.map((component) => `${component} qualifying score`) }); }
@@ -630,8 +622,9 @@ function renderMobileDashboard() {
   repeatMachRules.forEach((rule) => { if (championshipTitle(rule.key) || !machStageMet.get(rule.previous)) return; const previous = championshipTitle(rule.previous), progress = machExtensionProgress(rule, previous), needed = Math.max(Math.max(0, rule.total - progress.total), Math.max(0, rule.excellent - progress.excellent), Math.max(0, rule.gold - progress.gold)); targets.push({ name: rule.name, kind: "Scent", needed, items: [`${Math.max(0, rule.total - progress.total)} more new combinations`, `${Math.max(0, rule.excellent - progress.excellent)} more new Excellent combinations`, `${Math.max(0, rule.gold - progress.gold)} more new Excellent Gold scores`] }); });
   repeatEliteRules.forEach((rule) => { if (championshipTitle(rule.key)) return; const previous = championshipTitle(rule.previous); if (!previous) return; const eligible = rowsAfter(previous.date), sets = eligible ? eliteSets(eligible) : [], eliteGold = sets.filter((set) => set.gold).length; const needed = eligible ? Math.max(Math.max(0, 5 - sets.length), Math.max(0, rule.gold - eliteGold)) : 1; targets.push({ name: rule.name, kind: "Scent", needed, items: eligible ? [`${Math.max(0, 5 - sets.length)} more new Elite scores`, `${Math.max(0, rule.gold - eliteGold)} more new Elite Gold scores`] : [`Recorded ${rule.previous.toUpperCase()} title date and complete score dates required`] }); });
   gameTargets.filter((target) => target.needed > 0).forEach((target) => targets.push(target));
-  if (titledGames < 3) targets.push({ name: "SD-GCH", kind: "Games", needed: 3 - titledGames, items: [`${3 - titledGames} more individual Games title${3 - titledGames === 1 ? "" : "s"}`] });
-  gchRules.slice(1).forEach((rule, index) => { if (championshipTitle(rule.key) || !championshipTitle(gchRules[index].key)) return; const needed = rule.thresholds.reduce((sum, threshold, position) => sum + Math.max(0, threshold - (sortedPasses[position] || 0)), 0); targets.push({ name: rule.name, kind: "Games", needed, items: [rule.text, `${needed} estimated additional pass${needed === 1 ? "" : "es"} from the uploaded history`] }); });
+  gameChampionships.filter((entry) => !entry.met).forEach(({ rule, remaining }) => {
+    targets.push({ name: rule.name, kind: "Games", needed: remaining, items: [rule.text, `${remaining} more pass(es) needed using all historical Games entries`] });
+  });
   targets.sort((a, b) => a.needed - b.needed || a.name.localeCompare(b.name));
   $("mobile-next-list").innerHTML = targets.map((target) => `<article class="next-card"><header><div><h3>${esc(target.name)}</h3><p class="next-kind">${esc(target.kind)}</p></div><span class="remaining-badge">${target.needed} item${target.needed === 1 ? "" : "s"}</span></header><ol>${target.items.filter((item) => !/^0 more/i.test(item)).map((item) => `<li>${esc(item)}</li>`).join("")}</ol></article>`).join("") || `<article class="next-card"><h3>Everything shown is complete</h3><p>Check with SDDA for the next eligible extension.</p></article>`;
 }
@@ -647,8 +640,9 @@ async function loadScores(file) {
   parsed.data.forEach((row, index) => { const description = String(row.Description || "").trim(), game = gameFrom(description); const common = { sourceRow: index + 2, dogNumber: String(row["Dog Number"] || "").trim(), dog: String(row["Registered Name"] || "").trim(), trial: String(row["Trial Number"] || "").trim(), date: workbookDate(row["Event Date"]), description }; 
  if (game) {
     const result = String(row.Result ?? row.Status ?? row.Outcome ?? row.Score ?? "").trim();
-    const explicitFail = /^(?:fail|failed|not\s*pass|no\s*pass|did\s*not\s*pass|nq|np|no|false|absent|withdrawn)$/i.test(result);
-    gameRows.push({ ...common, game, pass: !explicitFail, result });
+    // A row appearing in the Dog Scores table is a Games pass/Q, even when
+    // Score, Result, or Status is blank or zero.
+    gameRows.push({ ...common, game, pass: true, result: "Listed in Dog Scores" });
     return;
 } const level = levelFrom(description), component = componentFrom(description), score = Number(row.Score); if (level && component && validComponentScore(level, component, row.Score)) standard.push({ ...common, level, component, score, maximum: Number(row["Maximum Score"]) }); });
   scores = standard; games = gameRows;
@@ -685,7 +679,7 @@ document.querySelectorAll(".tracker-tab").forEach((button) => button.addEventLis
 }));
 
 async function downloadPdfReport() {
-  if (!scores.length) return;
+  if (!scores.length && !games.length) return;
   const { PDFDocument, StandardFonts, rgb } = window.PDFLib;
   const pdf = await PDFDocument.create();
   const regular = await pdf.embedFont(StandardFonts.Helvetica);
