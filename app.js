@@ -712,9 +712,10 @@ function renderMobileDashboard() {
   gameChampionships.forEach(({ rule, met, remaining }) => {
     if (met) return;
     const progress = gameChampionshipProgress(gameCounts, rule);
+    const measuredTotal = rule.type === "all-four" ? progress.allFourTotal : progress.topThreeTotal;
     addTarget(rule.name, "Games", [
-      { done: progress.primaryMet ?? false, text: rule.text },
-      { done: false, text: `${remaining} more pass(es) needed; Games passes are cumulative and not consumed by earlier titles` }
+      { done: progress.baseMet, text: "At least 3 passes in each of 3 different Games" },
+      { done: measuredTotal >= rule.target, text: `${measuredTotal}/${rule.target} cumulative passes ${rule.type === "all-four" ? "across all four Games" : "across the top three Games"}` }
     ]);
   });
   targets.sort((a, b) => a.needed - b.needed || a.name.localeCompare(b.name));
