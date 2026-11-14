@@ -108,17 +108,18 @@ const GAME_CHAMPIONSHIP_RULES = [
   { key: "gch2", name: "SD-GCH2", type: "top-three", target: 13, text: "13 cumulative passes across the top 3 Games" },
   { key: "gch3", name: "SD-GCH3", type: "top-three", target: 18, text: "18 cumulative passes across the top 3 Games" },
   { key: "gch4", name: "SD-GCH4", type: "top-three", target: 25, text: "25 cumulative passes across the top 3 Games" },
-  { key: "gch5", name: "SD-GCH5", type: "all-four", target: 35, text: "35 cumulative passes across all 4 Games" }
+  { key: "gch5", name: "SD-GCH5", type: "all-four", target: 35, text: "35 cumulative passes across all 4 Games, with passes in each Game" }
 ];
 function gameChampionshipProgress(counts, rule) {
   const ordered = Object.values(counts).sort((a, b) => b - a);
   const topThreeTotal = ordered.slice(0, 3).reduce((sum, count) => sum + count, 0);
   const allFourTotal = ordered.reduce((sum, count) => sum + count, 0);
   // Every championship tier builds on the base configuration: at least
-  // three passes in each of three different Games. Higher tiers then use
-  // cumulative totals; no passes are consumed by earlier titles.
+  // three passes in each of three different Games. Higher tiers use banked,
+  // cumulative passes; earlier Games titles do not consume them.
   const baseMissing = ordered.slice(0, 3).reduce((sum, count) => sum + Math.max(0, 3 - count), 0);
   const baseMet = baseMissing === 0;
+  const allFourMissing = Object.values(counts).filter((count) => count <= 0).length;
   let targetTotal, currentTotal;
   if (rule.type === "base") {
     targetTotal = 9;
@@ -130,8 +131,19 @@ function gameChampionshipProgress(counts, rule) {
     targetTotal = rule.target;
     currentTotal = topThreeTotal;
   }
-  const remaining = Math.max(baseMissing, Math.max(0, targetTotal - currentTotal));
-  return { met: baseMet && currentTotal >= targetTotal, remaining, ordered, topThreeTotal, allFourTotal, baseMet, baseMissing };
+  // GCH5 specifically requires additional passes in all four Games. A total
+  // of 35 concentrated in only three Games is not sufficient.
+  const distributionMet = rule.type !== "all-four" || allFourMissing === 0;
+  const remaining = Math.max(
+    baseMissing,
+    Math.max(0, targetTotal - currentTotal),
+    rule.type === "all-four" ? allFourMissing : 0
+  );
+  return {
+    met: baseMet && currentTotal >= targetTotal && distributionMet,
+    remaining, ordered, topThreeTotal, allFourTotal, baseMet, baseMissing,
+    allFourMissing, distributionMet
+  };
 }
 function validComponentScore(level, component, value) {
   const text = String(value ?? "").trim();
@@ -208,7 +220,7 @@ function renderGames() {
     <p class="level-note">
       All listed Games rows are counted as passes, including rows with a zero or blank score.
       Historical Games titles in the Titles file are shown for reference but are not used to satisfy these calculations.
-      GCH through GCH4 use cumulative totals from the top three Games; GCH5 uses the cumulative total across all four Games. Earlier Games titles do not consume passes.
+      GCH through GCH4 use cumulative totals from the top three Games; GCH5 uses the cumulative total across all four Games and requires at least one pass in each Game. Earlier Games titles do not consume passes.
     </p>`;
 }
 
@@ -635,7 +647,7 @@ function renderMobileDashboard() {
       achieved: met,
       body: reqList([
         { done: met, text: rule.text },
-        { done: true, text: "Passes are cumulative and are not consumed by earlier Games championship titles. GCH through GCH4 use the top three Games; GCH5 uses all four." }
+        { done: true, text: "Passes are cumulative and are not consumed by earlier Games championship titles. GCH through GCH4 use the top three Games; GCH5 requires the cumulative total across all four Games, with at least one pass in each." }
       ]),
       accent: "level-accent-elite"
     })
