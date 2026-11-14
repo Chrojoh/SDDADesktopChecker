@@ -99,10 +99,14 @@ function dateLabel(value) {
 function byLevel(level, list = scores) { return list.filter((score) => score.level === level); }
 function componentCounts(level, list = scores) { return Object.fromEntries(COMPONENTS.map((component) => [component, list.filter((score) => score.level === level && score.component === component).length])); }
 function gamePassCounts() {
-  // Every row listed in Dog Scores for a recognized Game is one pass/Q.
-  // Score, Result, and Status values do not change that interpretation.
-  return Object.fromEntries(GAME_NAMES.map((game) => [game, games.filter((row) => row.game === game).length]));
+  // Dog Scores rows are qualifying Games Qs. A recorded individual Games
+  // title independently confirms at least three banked passes in that game.
+  return Object.fromEntries(GAME_NAMES.map((game) => [
+    game, Math.max(games.filter((row) => row.game === game).length, gamesTitleRecorded(game) ? 3 : 0)
+  ]));
 }
+
+
 const GAME_CHAMPIONSHIP_RULES = [
   { key: "gch", name: "SD-GCH", type: "base", target: 9, text: "At least 3 passes in each of 3 different Games (9 total)" },
   { key: "gch2", name: "SD-GCH2", type: "top-three", target: 13, text: "13 cumulative passes across the top 3 Games" },
@@ -114,25 +118,16 @@ function gameChampionshipProgress(counts, rule) {
   const ordered = Object.values(counts).sort((a, b) => b - a);
   const topThreeTotal = ordered.slice(0, 3).reduce((sum, count) => sum + count, 0);
   const allFourTotal = ordered.reduce((sum, count) => sum + count, 0);
-  // Every championship tier builds on the base configuration: at least
-  // three passes in each of three different Games. Higher tiers then use
-  // cumulative totals; no passes are consumed by earlier titles.
   const baseMissing = ordered.slice(0, 3).reduce((sum, count) => sum + Math.max(0, 3 - count), 0);
-  const baseMet = baseMissing === 0;
-  let targetTotal, currentTotal;
-  if (rule.type === "base") {
-    targetTotal = 9;
-    currentTotal = topThreeTotal;
-  } else if (rule.type === "all-four") {
-    targetTotal = rule.target;
-    currentTotal = allFourTotal;
-  } else {
-    targetTotal = rule.target;
-    currentTotal = topThreeTotal;
-  }
-  const remaining = Math.max(baseMissing, Math.max(0, targetTotal - currentTotal));
-  return { met: baseMet && currentTotal >= targetTotal, remaining, ordered, topThreeTotal, allFourTotal, baseMet, baseMissing };
+  const baseMet = baseMissing === 0, missingGames = ordered.filter((count) => count === 0).length;
+  const isAllFour = rule.type === "all-four", currentTotal = isAllFour ? allFourTotal : topThreeTotal;
+  const mandatoryMissing = baseMissing + (isAllFour ? missingGames : 0);
+  const remaining = Math.max(mandatoryMissing, Math.max(0, rule.target - currentTotal));
+  const allRequiredGamesPresent = !isAllFour || missingGames === 0;
+  return { met: baseMet && currentTotal >= rule.target && allRequiredGamesPresent, remaining, ordered, topThreeTotal, allFourTotal, baseMet, baseMissing, allRequiredGamesPresent, missingGames };
 }
+
+
 function validComponentScore(level, component, value) {
   const text = String(value ?? "").trim();
   if (!text) return false;
@@ -148,13 +143,13 @@ function renderGames() {
   const counts = gamePassCounts();
   const total = Object.values(counts).reduce((sum, count) => sum + count, 0);
   const titled = GAME_NAMES.filter((game) => counts[game] >= 3);
-  const championshipProgress = GAME_CHAMPIONSHIP_RULES.map((rule) => ({ rule, ...gameChampionshipProgress(counts, rule) }));
+  const championshipProgress = GAME_CHAMPIONSHIP_RULES.map((rule) => ({ rule, found: championshipTitle(rule.key), ...gameChampionshipProgress(counts, rule) }));
 
   $("games-summary").innerHTML = `
     <span>${total} Games passes / Qs</span>
     <span>${titled.length}/4 individual Games titles earned under current rules</span>
     <span class="${championshipProgress[0].met ? "gold" : ""}">
-      ${championshipProgress[0].met ? "SD-GCH pass requirements met" : `${championshipProgress[0].remaining} more pass(es) needed for SD-GCH`}
+      ${championshipProgress[0].found ? "SD-GCH recorded by SDDA" : championshipProgress[0].met ? "SD-GCH pass requirements met" : `${championshipProgress[0].remaining} more pass(es) needed for SD-GCH`}
     </span>`;
 
   $("games-grid").innerHTML = GAME_NAMES.map((game) => {
@@ -192,22 +187,22 @@ function renderGames() {
           <div class="game-attempt-header"><span>Date</span><span>Trial</span><span>Result</span></div>
           ${attemptRows || `<p class="game-history-empty">No Games entries recorded.</p>`}
         </div>
-        ${recorded ? `<p><strong>Historical title record:</strong> ${esc(dateLabel(recorded.date))}. This record is displayed for reference only and does not replace the current-rule pass calculation.</p>` : ""}
+        ${recorded ? `<p><strong>SDDA title record:</strong> ${esc(dateLabel(recorded.date))}. Its three qualifying passes are included in the banked Games count.</p>` : ""}
       </article>`;
   }).join("");
 
   $("games-championships").innerHTML = `
     <h3>Games Championship progress · July 2026 requirements</h3>
     <div class="game-ladder">
-      ${championshipProgress.map(({ rule, met, remaining }) => `
+      ${championshipProgress.map(({ rule, found, met, remaining }) => `
         <p><strong>${rule.name}</strong>
           <span>${rule.text}</span>
-          <span class="${met ? "status met" : "status partial"}">${met ? "Pass requirements met" : `${remaining} more pass(es) needed`}</span>
+          <span class="${found || met ? "status met" : "status partial"}">${found ? "Recorded by SDDA" : met ? "Pass requirements met" : `${remaining} more pass(es) needed`}</span>
         </p>`).join("")}
     </div>
     <p class="level-note">
       All listed Games rows are counted as passes, including rows with a zero or blank score.
-      Historical Games titles in the Titles file are shown for reference but are not used to satisfy these calculations.
+      Recorded individual Games titles confirm at least three banked passes in that game and are included in the championship calculations.
       GCH through GCH4 use cumulative totals from the top three Games; GCH5 uses the cumulative total across all four Games. Earlier Games titles do not consume passes.
     </p>`;
 }
@@ -284,27 +279,33 @@ function maximizeGoldCombinations(level, list = scores, maximum = Infinity) {
   const count = Math.min(Math.max(0, maximum - (special ? 1 : 0)), ...COMPONENTS.map((component) => ranked[component].length));
   const locked = special ? [{ rank: "SP", container: special.parts.Container, interior: special.parts.Interior, exterior: special.parts.Exterior, total: special.total, gold: special.gold, special: true, level, trial: special.trial }] : [];
   if (!count) return locked;
-  const containers = ranked.Container.slice(0, count), interiors = ranked.Interior.slice(0, count), exteriors = ranked.Exterior.slice(0, count);
-  let seed = 0x5dda2026;
-  const random = () => { seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0; return seed / 4294967296; };
-  const shuffle = (values) => {
-    const result = [...values];
-    for (let index = result.length - 1; index > 0; index--) { const swap = Math.floor(random() * (index + 1)); [result[index], result[swap]] = [result[swap], result[index]]; }
-    return result;
-  };
-  let best = [], bestGolds = -1;
-  for (let attempt = 0; attempt < 60000; attempt++) {
-    const iRows = attempt ? shuffle(interiors) : interiors, eRows = attempt ? shuffle(exteriors) : exteriors;
-    const combinations = containers.map((container, index) => {
-      const interior = iRows[index], exterior = eRows[index], total = container.score + interior.score + exterior.score;
-      return { level, rank: index + 1, container, interior, exterior, total, gold: total >= 192 };
-    });
-    const golds = combinations.filter((combination) => combination.gold).length;
-    if (golds > bestGolds) { best = combinations; bestGolds = golds; if (bestGolds === count) break; }
+  const containers = ranked.Container.slice(0, count).sort((a, b) => a.score - b.score);
+  const remainingInterior = ranked.Interior.slice(0, count).sort((a, b) => a.score - b.score);
+  const remainingExterior = ranked.Exterior.slice(0, count).sort((a, b) => a.score - b.score);
+  const goldSets = [], usedContainerRows = new Set();
+  // Deterministically pair the weakest Container Q first with the lowest-sum
+  // Interior/Exterior pair that still reaches 192 points. This replaces the
+  // randomized search that could miss a valid Gold pairing.
+  for (const container of containers) {
+    let best = null;
+    for (let i = 0; i < remainingInterior.length; i++) for (let e = 0; e < remainingExterior.length; e++) {
+      const total = container.score + remainingInterior[i].score + remainingExterior[e].score;
+      if (total >= 192 && (!best || total < best.total)) best = { i, e, total };
+    }
+    if (!best) continue;
+    const interior = remainingInterior.splice(best.i, 1)[0], exterior = remainingExterior.splice(best.e, 1)[0];
+    usedContainerRows.add(container.sourceRow);
+    goldSets.push({ level, container, interior, exterior, total: best.total, gold: true });
   }
-  const arranged = best.sort((a, b) => b.total - a.total).map((combination, index) => ({ ...combination, rank: index + 1 }));
-  return [...locked, ...arranged];
+  const nonGoldContainers = containers.filter((row) => !usedContainerRows.has(row.sourceRow)).sort((a, b) => b.score - a.score);
+  remainingInterior.sort((a, b) => b.score - a.score); remainingExterior.sort((a, b) => b.score - a.score);
+  const nonGoldSets = nonGoldContainers.map((container, index) => {
+    const interior = remainingInterior[index], exterior = remainingExterior[index], total = container.score + interior.score + exterior.score;
+    return { level, container, interior, exterior, total, gold: total >= 192 };
+  });
+  return [...locked, ...[...goldSets, ...nonGoldSets].sort((a, b) => b.total - a.total).map((set, index) => ({ ...set, rank: index + 1 }))];
 }
+
 
 function eliteSets(list = scores) {
   const trials = new Map();
@@ -378,50 +379,45 @@ function progressCard(title, status, requirements, note = "") {
 function titlePattern(level) { return new RegExp(`^${level}(?:\\s|$)`, "i"); }
 function championshipTitle(kind) {
   const patterns = {
-    ch: /(^|\b)(SD[- ]?)?CH(\b|$)|scent detection champion|^Champion$/i,
-    mach: /(^|\b)(SD[- ]?)?MACH(?!\d)|master champion(?!\s*[234])/i,
-    mach2: /MACH\s*2|master champion\s*2/i, mach3: /MACH\s*3|master champion\s*3/i, mach4: /MACH\s*4|master champion\s*4/i,
-    elch: /(^|\b)(SD[- ]?)?ELCH(?!\d)|elite champion(?!\s*[234])/i,
-    elch2: /ELCH\s*2|elite champion\s*2/i, elch3: /ELCH\s*3|elite champion\s*3/i, elch4: /ELCH\s*4|elite champion\s*4/i,
-    gmch: /GMCH|grand master champion/i,
-    gch: /(^|\b)(SD[- ]?)?GCH(?!\d)|games champion(?!\s*[2345])|^All Games$/i,
-    gch2: /GCH\s*2|games champion\s*2|^All Games\s*2$/i, gch3: /GCH\s*3|games champion\s*3|^All Games\s*3$/i,
-    gch4: /GCH\s*4|games champion\s*4|^All Games\s*4$/i, gch5: /GCH\s*5|games champion\s*5|^All Games\s*5$/i
+    ch: /(?:^|\b)(?:SD[- ]?)?CH(?:\b|$)|scent detection champion|^Champion$/i,
+    mach: /(?:^|\b)(?:SD[- ]?)?MACH(?:\b|$)|^(?!.*Grand Master).*Master Champion(?:\s|$)/i,
+    mach2: /\bMACH\s*2\b|^(?!.*Grand Master).*Master Champion\s*2\b/i,
+    mach3: /\bMACH\s*3\b|^(?!.*Grand Master).*Master Champion\s*3\b/i,
+    mach4: /\bMACH\s*4\b|^(?!.*Grand Master).*Master Champion\s*4\b/i,
+    elch: /\b(?:SD[- ]?)?ELCH\b|\bElite Champion(?!\s*[234])/i,
+    elch2: /\bELCH\s*2\b|\bElite Champion\s*2\b/i,
+    elch3: /\bELCH\s*3\b|\bElite Champion\s*3\b/i,
+    elch4: /\bELCH\s*4\b|\bElite Champion\s*4\b/i,
+    gmch: /\b(?:SD[- ]?)?GMCH\b|Grand Master Champion/i,
+    gch: /\b(?:SD[- ]?)?GCH\b|Games Champion(?!\s*[2345])|^All Games$/i,
+    gch2: /\bGCH\s*2\b|Games Champion\s*2|^All Games\s*2$/i,
+    gch3: /\bGCH\s*3\b|Games Champion\s*3|^All Games\s*3$/i,
+    gch4: /\bGCH\s*4\b|Games Champion\s*4|^All Games\s*4$/i,
+    gch5: /\bGCH\s*5\b|Games Champion\s*5|^All Games\s*5$/i
   };
   return findTitle(patterns[kind]);
 }
+
 
 function rowsAfter(date) {
   if (!date || scores.some((score) => !score.date)) return null;
   return scores.filter((score) => score.date > date);
 }
 
-function machExtensionProgress(rule) {
-  // MACH progression consumes complete titling combinations. Calculate the
-  // full Advanced and Excellent pools once, then remove every combination
-  // allocated to earlier MACH levels. Do not switch to date filtering: it can
-  // split/reuse an SP combination and makes the result depend on date quality.
-  // maximizeGoldCombinations keeps an initial SP as one locked combination
-  // and excludes its three component rows from all ordinary combinations.
-  const advanced = maximizeGoldCombinations("Advanced");
-  const excellent = maximizeGoldCombinations("Excellent");
-  const totalPool = advanced.length + excellent.length;
-  const excellentPool = excellent.length;
-  const excellentGoldPool = excellent.filter((set) => set.gold).length;
-  const remainingExcellent = Math.max(0, excellentPool - rule.usedExcellent);
-  const remainingGold = Math.max(0, excellentGoldPool - rule.usedGold);
-  return {
-    mode: "consumption",
-    total: Math.max(0, totalPool - rule.usedTotal),
-    excellent: remainingExcellent,
-    // Gold is a subset of Excellent combinations; it cannot exceed the
-    // number of Excellent combinations still available after consumption.
-    gold: Math.min(remainingExcellent, remainingGold),
-    totalPool,
-    excellentPool,
-    excellentGoldPool
-  };
+function machExtensionProgress(rule, previous) {
+  // SDDA requires repeat MACH qualifying scores to be earned after the
+  // preceding MACH title. The previous-title date and every score date are
+  // required before this progression can be calculated reliably.
+  if (!previous?.date) return { mode: "dates", available: false, total: 0, excellent: 0, gold: 0 };
+  const eligible = rowsAfter(previous.date);
+  if (!eligible) return { mode: "dates", available: false, total: 0, excellent: 0, gold: 0 };
+  // The initial SP is already earned before this date. Later Qs are ordinary
+  // component scores and must not be reclassified as another SP.
+  const advanced = maximizeGoldCombinations("Advanced", eligible);
+  const excellent = maximizeGoldCombinations("Excellent", eligible);
+  return { mode: "dates", available: true, total: advanced.length + excellent.length, excellent: excellent.length, gold: excellent.filter((set) => set.gold).length };
 }
+
 
 function render() {
   if (!scores.length && !games.length) { $("report").hidden = true; return; }
@@ -512,15 +508,18 @@ function render() {
   ];
   const legacyMachStageMet = new Map([["mach", !!mach || machScoresMet]]);
   for (const extension of extensions) {
-    const achieved = championshipTitle(extension.key), previousMet = !!extension.prior || !!legacyMachStageMet.get(extension.previous); if (!previousMet && !achieved) continue;
-    const progress = machExtensionProgress(extension, extension.prior);
-    cards.push(progressCard(extension.title, achieved ? "Achieved" : "In progress", [
-      { done: progress.total >= extension.need, text: `${progress.total}/${extension.need} new titling scores` },
-      { done: progress.excellent >= extension.excellent, text: `${progress.excellent}/${extension.excellent} new Excellent combinations` },
-      { done: progress.gold >= extension.gold, text: `${progress.gold}/${extension.gold} new Excellent Gold scores` }
-    ], `${achieved ? `Recorded ${dateLabel(achieved.date)}. ` : ""}${"Uses non-overlapping combinations; earlier MACH titles consume their required combinations."}`));
-    legacyMachStageMet.set(extension.key, !!achieved || (previousMet && progress.total >= extension.need && progress.excellent >= extension.excellent && progress.gold >= extension.gold));
+    const achieved = championshipTitle(extension.key), previousMet = !!extension.prior || !!legacyMachStageMet.get(extension.previous);
+    if (!previousMet && !achieved) continue;
+    const progress = machExtensionProgress(extension, extension.prior), ready = progress.available;
+    cards.push(progressCard(extension.title, achieved ? "Achieved" : ready ? "In progress" : "cannot calculate without dates", [
+      { done: ready && progress.total >= extension.need, text: ready ? `${progress.total}/${extension.need} new titling scores` : "Previous MACH title date and complete score dates required" },
+      { done: ready && progress.excellent >= extension.excellent, text: ready ? `${progress.excellent}/${extension.excellent} new Excellent combinations` : "Cannot verify new Excellent scores without dates" },
+      { done: ready && progress.gold >= extension.gold, text: ready ? `${progress.gold}/${extension.gold} new Excellent Gold scores` : "Cannot verify new Excellent Gold scores without dates" }
+    ], `${achieved ? `Recorded ${dateLabel(achieved.date)}. ` : ""}Only scores earned after the previous MACH title count.`));
+    legacyMachStageMet.set(extension.key, !!achieved || (previousMet && ready && progress.total >= extension.need && progress.excellent >= extension.excellent && progress.gold >= extension.gold));
   }
+
+
   $("progress").innerHTML = cards.join("");
 
   const classification = (total) => total >= 192 ? "Gold" : total >= 172 ? "Silver" : total >= 142 ? "Bronze" : "Satisfactory";
@@ -583,16 +582,18 @@ function renderMobileDashboard() {
   repeatMachRules.forEach((rule) => {
     const found = championshipTitle(rule.key), previous = championshipTitle(rule.previous), progress = machExtensionProgress(rule, previous);
     const previousMet = !!previous || !!machStageMet.get(rule.previous);
-    const met = previousMet && progress.total >= rule.total && progress.excellent >= rule.excellent && progress.gold >= rule.gold;
+    const met = previousMet && progress.available && progress.total >= rule.total && progress.excellent >= rule.excellent && progress.gold >= rule.gold;
     championCards.push({ name: rule.name, found, met, items: [
       { done: previousMet, text: previous ? `${rule.previous.toUpperCase()} recorded ${dateLabel(previous.date)}` : previousMet ? `${rule.previous.toUpperCase()} score requirements met · calculated starting point` : `${rule.previous.toUpperCase()} requirements must be met first` },
-      { done: progress.total >= rule.total, text: `${progress.total}/${rule.total} new score combinations` },
-      { done: progress.excellent >= rule.excellent, text: `${progress.excellent}/${rule.excellent} new Excellent combinations` },
-      { done: progress.gold >= rule.gold, text: `${progress.gold}/${rule.gold} new Excellent Gold scores` },
-      { done: true, text: "Earlier MACH combinations are consumed and cannot be reused" }
+      { done: progress.available && progress.total >= rule.total, text: progress.available ? `${progress.total}/${rule.total} new score combinations` : "Previous MACH title date and complete score dates required" },
+      { done: progress.available && progress.excellent >= rule.excellent, text: progress.available ? `${progress.excellent}/${rule.excellent} new Excellent combinations` : "Cannot verify new Excellent scores without dates" },
+      { done: progress.available && progress.gold >= rule.gold, text: progress.available ? `${progress.gold}/${rule.gold} new Excellent Gold scores` : "Cannot verify new Gold scores without dates" },
+      { done: progress.available, text: progress.available ? `Counted only after ${dateLabel(previous.date)}` : "Scores before the previous title cannot be reused" }
     ] });
     machStageMet.set(rule.key, !!found || met);
   });
+
+
   const repeatEliteRules = [
     { key: "elch2", previous: "elch", name: "SD-ELCH2", gold: 3 },
     { key: "elch3", previous: "elch2", name: "SD-ELCH3", gold: 4 },
@@ -689,12 +690,12 @@ function renderMobileDashboard() {
   repeatMachRules.forEach((rule) => {
     if (championshipTitle(rule.key) || !machStageMet.get(rule.previous)) return;
     const previous = championshipTitle(rule.previous), progress = machExtensionProgress(rule, previous);
-    addTarget(rule.name, "Scent", [
+    addTarget(rule.name, "Scent", progress.available ? [
       { done: !!previous || !!machStageMet.get(rule.previous), text: previous ? `${rule.previous.toUpperCase()} recorded` : `${rule.previous.toUpperCase()} score requirements met` },
       { done: progress.total >= rule.total, text: `${progress.total}/${rule.total} new combinations` },
       { done: progress.excellent >= rule.excellent, text: `${progress.excellent}/${rule.excellent} new Excellent combinations` },
       { done: progress.gold >= rule.gold, text: `${progress.gold}/${rule.gold} new Excellent Gold scores` }
-    ]);
+    ] : [{ done: false, text: "Previous MACH title date and complete score dates required; only later Qs may count." }]);
   });
   repeatEliteRules.forEach((rule) => {
     if (championshipTitle(rule.key)) return;
