@@ -276,7 +276,9 @@ function initialSpecialSet(level, list = scores) {
 }
 
 function highToLow(level, list = scores) {
-  const special = initialSpecialSet(level, list);
+  const originalSpecial = initialSpecialSet(level, scores);
+  const includedRows = new Set(list.map((score) => score.sourceRow));
+  const special = originalSpecial && COMPONENTS.every((component) => includedRows.has(originalSpecial.parts[component].sourceRow)) ? originalSpecial : null;
   const lockedRows = new Set(special ? COMPONENTS.map((component) => special.parts[component].sourceRow) : []);
   const ranked = Object.fromEntries(COMPONENTS.map((component) => [component, list.filter((score) => score.level === level && score.component === component && !lockedRows.has(score.sourceRow)).sort((a, b) => b.score - a.score)]));
   const count = Math.min(...COMPONENTS.map((component) => ranked[component].length));
