@@ -276,7 +276,7 @@ function initialSpecialSet(level, list = scores) {
 }
 
 function highToLow(level, list = scores) {
-  const special = list === scores ? initialSpecialSet(level, list) : null;
+  const special = initialSpecialSet(level, list);
   const lockedRows = new Set(special ? COMPONENTS.map((component) => special.parts[component].sourceRow) : []);
   const ranked = Object.fromEntries(COMPONENTS.map((component) => [component, list.filter((score) => score.level === level && score.component === component && !lockedRows.has(score.sourceRow)).sort((a, b) => b.score - a.score)]));
   const count = Math.min(...COMPONENTS.map((component) => ranked[component].length));
@@ -403,35 +403,46 @@ function championshipTitle(kind) {
   return findTitle(patterns[kind]);
 }
 
-function rowsAfter(date) {
-  if (!date || scores.some((score) => !score.date)) return null;
-  return scores.filter((score) => score.date > date);
+function trialCutoffForTitle(title) {
+  if (!title) return null;
+  const honoursMatch = String(title.honours || "").match(/trial\s*#?\s*(\d+)/i);
+  if (honoursMatch) return Number(honoursMatch[1]);
+  if (!title.date) return null;
+
+  // The Titles export stores an award date, not an award trial number.
+  // Use the latest trial listed on that date as a conservative cutoff:
+  // this can under-count later same-day scores, but cannot reuse scores
+  // from before the award merely because several trials shared a date.
+  const matchingTrials = [];
+  for (const [trial, info] of trialDates.entries()) {
+    if (info.date === title.date && Number.isFinite(Number(trial))) matchingTrials.push(Number(trial));
+  }
+  if (!matchingTrials.length) {
+    scores.forEach((score) => {
+      if (score.date === title.date && score.trial && Number.isFinite(Number(score.trial))) matchingTrials.push(Number(score.trial));
+    });
+  }
+  return matchingTrials.length ? Math.max(...matchingTrials) : null;
 }
 
-function machExtensionProgress(rule) {
-  // MACH progression consumes complete titling combinations. Calculate the
-  // full Advanced and Excellent pools once, then remove every combination
-  // allocated to earlier MACH levels. Do not switch to date filtering: it can
-  // split/reuse an SP combination and makes the result depend on date quality.
-  // maximizeGoldCombinations keeps an initial SP as one locked combination
-  // and excludes its three component rows from all ordinary combinations.
-  const advanced = maximizeGoldCombinations("Advanced");
-  const excellent = maximizeGoldCombinations("Excellent");
-  const totalPool = advanced.length + excellent.length;
-  const excellentPool = excellent.length;
-  const excellentGoldPool = excellent.filter((set) => set.gold).length;
-  const remainingExcellent = Math.max(0, excellentPool - rule.usedExcellent);
-  const remainingGold = Math.max(0, excellentGoldPool - rule.usedGold);
+function machExtensionProgress(rule, priorTitle) {
+  const cutoffTrial = trialCutoffForTitle(priorTitle);
+  if (cutoffTrial == null) {
+    return { verified: false, cutoffTrial: null, total: 0, excellent: 0, gold: 0 };
+  }
+  // A repeat MACH starts with score rows from trials strictly after the
+  // previous title's cutoff. Filtering the raw rows first keeps all three
+  // components of an SP together; maximizeGoldCombinations then locks any
+  // SP earned within this new scoring period as one combination.
+  const eligibleScores = scores.filter((score) => score.trial && Number.isFinite(Number(score.trial)) && Number(score.trial) > cutoffTrial);
+  const advanced = maximizeGoldCombinations("Advanced", eligibleScores);
+  const excellent = maximizeGoldCombinations("Excellent", eligibleScores);
   return {
-    mode: "consumption",
-    total: Math.max(0, totalPool - rule.usedTotal),
-    excellent: remainingExcellent,
-    // Gold is a subset of Excellent combinations; it cannot exceed the
-    // number of Excellent combinations still available after consumption.
-    gold: Math.min(remainingExcellent, remainingGold),
-    totalPool,
-    excellentPool,
-    excellentGoldPool
+    verified: true,
+    cutoffTrial,
+    total: advanced.length + excellent.length,
+    excellent: excellent.length,
+    gold: excellent.filter((set) => set.gold).length
   };
 }
 
@@ -526,11 +537,12 @@ function render() {
   for (const extension of extensions) {
     const achieved = championshipTitle(extension.key), previousMet = !!extension.prior || !!legacyMachStageMet.get(extension.previous); if (!previousMet && !achieved) continue;
     const progress = machExtensionProgress(extension, extension.prior);
-    cards.push(progressCard(extension.title, achieved ? "Achieved" : "In progress", [
-      { done: progress.total >= extension.need, text: `${progress.total}/${extension.need} new titling scores` },
-      { done: progress.excellent >= extension.excellent, text: `${progress.excellent}/${extension.excellent} new Excellent combinations` },
-      { done: progress.gold >= extension.gold, text: `${progress.gold}/${extension.gold} new Excellent Gold scores` }
-    ], `${achieved ? `Recorded ${dateLabel(achieved.date)}. ` : ""}${"Uses non-overlapping combinations; earlier MACH titles consume their required combinations."}`));
+    cards.push(progressCard(extension.title, achieved ? "Achieved" : progress.verified ? "In progress" : "Cannot verify cutoff", [
+      { done: !!extension.prior, text: extension.prior ? `${extension.previous.toUpperCase()} recorded ${dateLabel(extension.prior.date)} · cutoff Trial ${progress.cutoffTrial ?? "unavailable"}` : `${extension.previous.toUpperCase()} title record required to establish the starting trial` },
+      { done: progress.verified && progress.total >= extension.need, text: `${progress.verified ? progress.total : "—"}/${extension.need} new titling combinations` },
+      { done: progress.verified && progress.excellent >= extension.excellent, text: `${progress.verified ? progress.excellent : "—"}/${extension.excellent} new Excellent combinations` },
+      { done: progress.verified && progress.gold >= extension.gold, text: `${progress.verified ? progress.gold : "—"}/${extension.gold} new Excellent Gold scores` }
+    ], `${achieved ? `Recorded ${dateLabel(achieved.date)}. ` : ""}${progress.verified ? "Only trials with a number greater than the previous title cutoff count. Trials on the award date are conservatively excluded through the last trial listed that day." : "Upload the official Trial Workbook and Titles file so the previous title date can be matched to a trial number. No repeat-MACH progress is claimed without a reliable cutoff."}`));
     legacyMachStageMet.set(extension.key, !!achieved || (previousMet && progress.total >= extension.need && progress.excellent >= extension.excellent && progress.gold >= extension.gold));
   }
   $("progress").innerHTML = cards.join("");
@@ -549,7 +561,7 @@ function render() {
   document.querySelectorAll(".level-score-block table thead tr").forEach((row) => { const cells = row.querySelectorAll("th"); if (cells.length >= 4) { cells[1].textContent = "Container"; cells[2].textContent = "Exterior"; cells[3].textContent = "Interior"; } });
 
   const blanks = scores.filter((score) => !score.date).length;
-  $("limits").innerHTML = `<h3>Verification limits in these downloads</h3><ul><li>The score download contains no judge column, so two-judge and three-judge championship requirements cannot be proven.</li>${dateMatches ? `<li>${dateMatches} missing Event Date value${dateMatches === 1 ? " was" : "s were"} filled by matching Trial Number in the official Trial Workbook.</li>` : ""}${blanks ? `<li>${blanks} score row${blanks === 1 ? " still has" : "s still have"} no Event Date.${unmatchedTrials.length ? ` Trial number${unmatchedTrials.length === 1 ? "" : "s"} not found in that workbook: ${unmatchedTrials.join(", ")}.` : ""} Higher championship calculations cannot reliably exclude scores earned on or before a previous title date.</li>` : ""}<li>This report treats rows in the Dog Scores download as qualifying scores, consistent with the supplied Gold-score instructions.</li><li>SDDA remains the authority for official title approval.</li></ul>`;
+  $("limits").innerHTML = `<h3>Verification limits in these downloads</h3><ul><li>The score download contains no judge column, so two-judge and three-judge championship requirements cannot be proven.</li>${dateMatches ? `<li>${dateMatches} missing Event Date value${dateMatches === 1 ? " was" : "s were"} filled by matching Trial Number in the official Trial Workbook.</li>` : ""}${blanks ? `<li>${blanks} score row${blanks === 1 ? " still has" : "s still have"} no Event Date.${unmatchedTrials.length ? ` Trial number${unmatchedTrials.length === 1 ? "" : "s"} not found in that workbook: ${unmatchedTrials.join(", ")}.` : ""} Repeat MACH cutoffs cannot be verified until the previous title date is matched to a trial number in the official Trial Workbook.</li>` : ""}<li>This report treats rows in the Dog Scores download as qualifying scores, consistent with the supplied Gold-score instructions.</li><li>SDDA remains the authority for official title approval.</li></ul>`;
 }
 
 function renderMobileDashboard() {
@@ -596,12 +608,12 @@ function renderMobileDashboard() {
     const found = championshipTitle(rule.key), previous = championshipTitle(rule.previous), progress = machExtensionProgress(rule, previous);
     const previousMet = !!previous || !!machStageMet.get(rule.previous);
     const met = previousMet && progress.total >= rule.total && progress.excellent >= rule.excellent && progress.gold >= rule.gold;
-    championCards.push({ name: rule.name, found, met, items: [
-      { done: previousMet, text: previous ? `${rule.previous.toUpperCase()} recorded ${dateLabel(previous.date)}` : previousMet ? `${rule.previous.toUpperCase()} score requirements met · calculated starting point` : `${rule.previous.toUpperCase()} requirements must be met first` },
-      { done: progress.total >= rule.total, text: `${progress.total}/${rule.total} new score combinations` },
-      { done: progress.excellent >= rule.excellent, text: `${progress.excellent}/${rule.excellent} new Excellent combinations` },
-      { done: progress.gold >= rule.gold, text: `${progress.gold}/${rule.gold} new Excellent Gold scores` },
-      { done: true, text: "Earlier MACH combinations are consumed and cannot be reused" }
+    championCards.push({ name: rule.name, found, met: !!found || (previousMet && progress.verified && progress.total >= rule.total && progress.excellent >= rule.excellent && progress.gold >= rule.gold), items: [
+      { done: !!previous && progress.verified, text: previous ? `${rule.previous.toUpperCase()} recorded · cutoff Trial ${progress.cutoffTrial ?? "unavailable"}` : `${rule.previous.toUpperCase()} title record needed to establish cutoff` },
+      { done: progress.verified && progress.total >= rule.total, text: `${progress.verified ? progress.total : "—"}/${rule.total} new score combinations` },
+      { done: progress.verified && progress.excellent >= rule.excellent, text: `${progress.verified ? progress.excellent : "—"}/${rule.excellent} new Excellent combinations` },
+      { done: progress.verified && progress.gold >= rule.gold, text: `${progress.verified ? progress.gold : "—"}/${rule.gold} new Excellent Gold scores` },
+      { done: progress.verified, text: progress.verified ? "Only trials after the previous title cutoff are counted" : "Upload Trial Workbook to verify the previous title's trial cutoff" }
     ] });
     machStageMet.set(rule.key, !!found || met);
   });
