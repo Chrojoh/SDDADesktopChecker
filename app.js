@@ -115,72 +115,12 @@ function validComponentScore(level, component, value) {
 
 
 function renderGames() {
-  const counts = gamePassCounts();
-  const total = Object.values(counts).reduce((sum, count) => sum + count, 0);
-  const titled = GAME_NAMES.filter((game) => counts[game] >= 3);
-  const championshipProgress = GAME_CHAMPIONSHIP_RULES.map((rule) => ({ rule, ...gameChampionshipProgress(counts, rule) }));
-
-  $("games-summary").innerHTML = `
-    <span>${total} Games passes / Qs</span>
-    <span>${titled.length}/4 individual Games titles earned under current rules</span>
-    <span class="${championshipProgress[0].met ? "gold" : ""}">
-      ${championshipProgress[0].met ? "SD-GCH pass requirements met" : `${championshipProgress[0].remaining} more pass(es) needed for SD-GCH`}
-    </span>`;
-
-  $("games-grid").innerHTML = GAME_NAMES.map((game) => {
-    const passes = counts[game];
-    const entries = games.filter((row) => row.game === game);
-    const recorded = gameTitleRecord(game);
-    const met = passes >= 3;
-    const details = game === "Aerial"
-      ? "1 hide · 1 distractor · recommended 2 min; judge may adjust"
-      : game === "Distance"
-      ? "1 hide · no distractors · recommended 3 min; judge may adjust"
-      : game === "Speed"
-      ? "2–4 hides · 2–4 distractors · fixed 60 sec"
-      : "2–5 hides · 2–4 distractors · recommended 5 min; judge may adjust";
-    const attemptRows = entries.map((row) => `
-      <div class="game-attempt">
-        <span class="game-attempt-date">${esc(dateLabel(row.date))}</span>
-        <span class="game-attempt-trial">Trial ${esc(row.trial || "—")}</span>
-        <strong class="game-result pass">Q / PASS</strong>
-      </div>`).join("");
-
-    return `
-      <article class="game-card">
-        <h3>${esc(game)} <small>SD-G${game[0]}</small></h3>
-        <span class="status ${met ? "met" : passes ? "partial" : "unknown"}">
-          ${met ? "Current-rule title requirements met" : passes ? "In progress" : "No pass data"}
-        </span>
-        <div class="game-count"><strong>${passes}</strong><span>/ 3 passes</span></div>
-        <p>${details}</p>
-        <div class="game-history">
-          <h4>Games pass history</h4>
-          <div class="game-history-summary">
-            <span>${passes} Qs / passes</span><span>0 failures counted</span><span>${entries.length} listed entries</span>
-          </div>
-          <div class="game-attempt-header"><span>Date</span><span>Trial</span><span>Result</span></div>
-          ${attemptRows || `<p class="game-history-empty">No Games entries recorded.</p>`}
-        </div>
-        ${recorded ? `<p><strong>Historical title record:</strong> ${esc(dateLabel(recorded.date))}. This record is displayed for reference only and does not replace the current-rule pass calculation.</p>` : ""}
-      </article>`;
-  }).join("");
-
-  $("games-championships").innerHTML = `
-    <h3>Games Championship progress · July 2026 requirements</h3>
-    <div class="game-ladder">
-      ${championshipProgress.map(({ rule, met, remaining }) => `
-        <p><strong>${rule.name}</strong>
-          <span>${rule.text}</span>
-          <span class="${met ? "status met" : "status partial"}">${met ? "Pass requirements met" : `${remaining} more pass(es) needed`}</span>
-        </p>`).join("")}
-    </div>
-    <p class="level-note">
-      All listed Games rows are counted as passes, including rows with a zero or blank score.
-      Historical Games titles in the Titles file are shown for reference but are not used to satisfy these calculations.
-      GCH through GCH4 use cumulative totals from the top three Games; GCH5 uses the cumulative total across all four Games and requires at least one pass in each Game. Earlier Games titles do not consume passes.
-    </p>`;
+ const counts=gamePassCounts(),total=Object.values(counts).reduce((a,b)=>a+b,0),titled=GAME_NAMES.filter(g=>counts[g]>=3),progress=GAME_CHAMPIONSHIP_RULES.map(rule=>({rule,...gameChampionshipProgress(counts,rule)}));
+ $("games-summary").innerHTML="<span>"+total+" banked Games passes</span><span>"+titled.length+"/4 individual Games titles</span><span>"+(progress[0].met?"SD-GCH requirements met":progress[0].remaining+" more pass(es) needed for SD-GCH")+"</span>";
+ $("games-grid").innerHTML=GAME_NAMES.map(game=>{const passes=counts[game],entries=games.filter(r=>r.game===game&&r.pass!==false),recorded=gameTitleRecord(game),met=passes>=3,details=game==="Aerial"?"1 hide · 1 distractor · recommended 2 min; judge may adjust":game==="Distance"?"1 hide · no distractors · recommended 3 min; judge may adjust":game==="Speed"?"2–4 hides · 2–4 distractors · fixed 60 sec":"2–5 hides · 2–4 distractors · recommended 5 min; judge may adjust",rows=entries.map(r=>"<div class='game-attempt'><span>"+esc(dateLabel(r.date))+"</span><span>Trial "+esc(r.trial||"—")+"</span><strong>Q / PASS</strong></div>").join("");return "<article class='game-card'><h3>"+esc(game)+" <small>SD-G"+game[0]+"</small></h3><span class='status "+(met?"met":passes?"partial":"unknown")+"'>"+(met?"Individual title requirement met":passes?"In progress":"No pass data")+"</span><div class='game-count'><strong>"+passes+"</strong><span>/ 3 passes</span></div><p>"+details+"</p><div class='game-history'><h4>Games pass history</h4><div class='game-history-summary'><span>"+passes+" passes</span><span>"+entries.length+" listed entries</span></div><div class='game-attempt-header'><span>Date</span><span>Trial</span><span>Result</span></div>"+(rows||"<p>No Games pass entries recorded.</p>")+"</div>"+(recorded?"<p><strong>SDDA title record:</strong> "+esc(dateLabel(recorded.date))+"</p>":"")+"</article>";}).join("");
+ $("games-championships").innerHTML="<h3>Games Championship progress · Rule Book v5.1</h3><div class='game-ladder'>"+progress.map(({rule,met,remaining,progressText})=>"<p><strong>"+rule.name+"</strong><span>"+rule.text+"</span><span class='status "+(met?"met":"partial")+"'>"+(met?"Pass requirements met":remaining+" more pass(es) needed")+"</span><small>"+progressText+"</small></p>").join("")+"</div><p class='level-note'>GCH requires 3 passes in each of any 3 Games. GCH2 requires 13, GCH3 18 and GCH4 25 cumulative passes across the top three Games. GCH5 requires 35 across all four Games. Passes are banked and not consumed by earlier titles.</p>";
 }
+
 
 function workbookDate(value) {
   const text = String(value ?? "").trim();
