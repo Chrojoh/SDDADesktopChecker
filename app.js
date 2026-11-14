@@ -108,7 +108,7 @@ const GAME_CHAMPIONSHIP_RULES = [
   { key: "gch2", name: "SD-GCH2", thresholds: [7, 7, 7], text: "At least 7 passes in any 3 Games" },
   { key: "gch3", name: "SD-GCH3", thresholds: [12, 12, 12], text: "At least 12 passes in any 3 Games" },
   { key: "gch4", name: "SD-GCH4", thresholds: [19, 19, 19], text: "At least 19 passes in any 3 Games" },
-  { key: "gch5", name: "SD-GCH5", thresholds: [29, 29, 29, 10], text: "At least 29 passes in any 3 Games and 10 in the fourth Game" }
+  { key: "gch5", name: "SD-GCH5", thresholds: [29, 29, 29, 29], text: "At least 29 passes in all four Games" }
 ];
 function gameChampionshipProgress(counts, rule) {
   const ordered = Object.values(counts).sort((a, b) => b - a);
