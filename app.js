@@ -160,15 +160,6 @@ function renderGames() {
                     <span>/ 3 passes</span>
                 </div>
 
-                <div class="game-meter"
-                    role="progressbar"
-                    aria-label="${esc(game)} passes"
-                    aria-valuemin="0"
-                    aria-valuemax="3"
-                    aria-valuenow="${Math.min(passes, 3)}">
-                    <i style="width:${Math.min(100, passes / 3 * 100)}%"></i>
-                </div>
-
                 <p>${details}</p>
 
                 <div class="game-history">
