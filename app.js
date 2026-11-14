@@ -396,20 +396,26 @@ function rowsAfter(date) {
   return scores.filter((score) => score.date > date);
 }
 
-function machExtensionProgress(rule, previous) {
-  const relevant = scores.filter((score) => score.level === "Advanced" || score.level === "Excellent");
-  const canUseDates = !!previous?.date && relevant.length > 0 && relevant.every((score) => !!score.date);
-  if (canUseDates) {
-    const eligible = relevant.filter((score) => score.date > previous.date);
-    const advanced = maximizeGoldCombinations("Advanced", eligible), excellent = maximizeGoldCombinations("Excellent", eligible);
-    return { mode: "dates", total: advanced.length + excellent.length, excellent: excellent.length, gold: excellent.filter((set) => set.gold).length };
-  }
-  const advanced = maximizeGoldCombinations("Advanced"), excellent = maximizeGoldCombinations("Excellent");
+function machExtensionProgress(rule) {
+  // MACH progression consumes complete titling combinations. Calculate the
+  // full Advanced and Excellent pools once, then remove every combination
+  // allocated to earlier MACH levels. Do not switch to date filtering: it can
+  // split/reuse an SP combination and makes the result depend on date quality.
+  // maximizeGoldCombinations keeps an initial SP as one locked combination
+  // and excludes its three component rows from all ordinary combinations.
+  const advanced = maximizeGoldCombinations("Advanced");
+  const excellent = maximizeGoldCombinations("Excellent");
+  const totalPool = advanced.length + excellent.length;
+  const excellentPool = excellent.length;
+  const excellentGoldPool = excellent.filter((set) => set.gold).length;
   return {
-    mode: "balance",
-    total: Math.max(0, advanced.length + excellent.length - rule.usedTotal),
-    excellent: Math.max(0, excellent.length - rule.usedExcellent),
-    gold: Math.max(0, excellent.filter((set) => set.gold).length - rule.usedGold)
+    mode: "consumption",
+    total: Math.max(0, totalPool - rule.usedTotal),
+    excellent: Math.max(0, excellentPool - rule.usedExcellent),
+    gold: Math.max(0, excellentGoldPool - rule.usedGold),
+    totalPool,
+    excellentPool,
+    excellentGoldPool
   };
 }
 
@@ -508,7 +514,7 @@ function render() {
       { done: progress.total >= extension.need, text: `${progress.total}/${extension.need} new titling scores` },
       { done: progress.excellent >= extension.excellent, text: `${progress.excellent}/${extension.excellent} new Excellent combinations` },
       { done: progress.gold >= extension.gold, text: `${progress.gold}/${extension.gold} new Excellent Gold scores` }
-    ], `${achieved ? `Recorded ${dateLabel(achieved.date)}. ` : ""}${progress.mode === "dates" ? `Counts scores dated after ${dateLabel(extension.prior?.date)}.` : "Uses the calculated prior-title starting point and subtracts the minimum requirements consumed by preceding championships."}`));
+    ], `${achieved ? `Recorded ${dateLabel(achieved.date)}. ` : ""}${"Uses non-overlapping combinations; earlier MACH titles consume their required combinations."}`));
     legacyMachStageMet.set(extension.key, !!achieved || (previousMet && progress.total >= extension.need && progress.excellent >= extension.excellent && progress.gold >= extension.gold));
   }
   $("progress").innerHTML = cards.join("");
@@ -573,7 +579,7 @@ function renderMobileDashboard() {
       { done: progress.total >= rule.total, text: `${progress.total}/${rule.total} new score combinations` },
       { done: progress.excellent >= rule.excellent, text: `${progress.excellent}/${rule.excellent} new Excellent combinations` },
       { done: progress.gold >= rule.gold, text: `${progress.gold}/${rule.gold} new Excellent Gold scores` },
-      { done: progress.mode === "dates", text: progress.mode === "dates" ? `Counted after ${dateLabel(previous?.date)}` : "Calculated by subtracting preceding minimum requirements" }
+      { done: true, text: "Earlier MACH combinations are consumed and cannot be reused" }
     ] });
     machStageMet.set(rule.key, !!found || met);
   });
