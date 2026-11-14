@@ -246,6 +246,14 @@ function applyTrialDates() {
   unmatchedTrials = [...new Set(scores.filter((score) => !score.date && score.trial).map((score) => String(score.trial)))].sort((a, b) => Number(a) - Number(b));
 }
 
+// Repeat Elite calculations require complete dates for every score row.
+// Returning null prevents a partial date-filtered set from being mistaken
+// for a complete post-title period when any score date is unavailable.
+function rowsAfter(titleDate) {
+  if (!titleDate || scores.some((score) => !score.date)) return null;
+  return scores.filter((score) => score.date > titleDate);
+}
+
 function initialSpecialSet(level, list = scores) {
   if (level !== "Advanced" && level !== "Excellent") return null;
   const ordered = list.filter((score) => score.level === level).sort((a, b) => {
