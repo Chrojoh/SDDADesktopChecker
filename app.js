@@ -389,7 +389,7 @@ function render() {
   const gmch = championshipTitle("gmch");
   const gmchScoresMet = (!!mach || machScoresMet) && (!!elch || elchScoresMet);
   cards.push(progressCard("SD-GMCH", gmch ? "Achieved" : gmchScoresMet ? "Score requirements met; judge verification needed" : "In progress", [
-    { done: !!mach || machScoresMet, text: mach ? "SD-MACH recorded" : machScoresMet ? "Calculated SD-MACH score requirements met" : "SD-MACH required" }, { done: !!elch || elchScoresMet, text: elch ? "SD-ELCH recorded" : elchScoresMet ? "Calculated SD-ELCH score requirements met" : "SD-ELCH required" }, { done: false, text: "At least 3 judges: cannot verify from this score download" }
+    { done: !!mach || machScoresMet, text: mach ? "SD-MACH recorded" : machScoresMet ? "Calculated SD-MACH score requirements met" : "SD-MACH required" }, { done: !!elch, text: elch ? "SD-ELCH recorded" : elchScoresMet ? "SD-ELCH score requirements met · at least 2 judges still need verification" : "SD-ELCH required" }, { done: false, text: "At least 3 judges: cannot verify from this score download" }
   ], gmch ? `Recorded ${dateLabel(gmch.date)}.` : "The score requirements can be calculated, but judge names and official title approval require SDDA confirmation."));
 
   const extensions = [
