@@ -551,6 +551,9 @@ function renderMobileDashboard() {
     { name: "Started", pattern: /^Started(?:\s|$)/i }, { name: "Advanced", pattern: /^Advanced(?:\s|$)/i },
     { name: "Excellent", pattern: /^Excellent(?:\s|$)/i }, { name: "Elite", pattern: /^Elite(?:\s|$)/i, elite: true }
   ];
+  const excellentTitleMet = !!titles.find((title) => /^Excellent(?:\\s|$)/i.test(titleText(title)))
+    || !!inferred.find((title) => /^Excellent(?:\\s|$)/i.test(titleText(title)))
+    || COMPONENTS.every((component) => componentCounts("Excellent")[component] > 0);
   const scentCards = levelTitles.map((entry) => {
     const recorded = titles.find((title) => entry.pattern.test(titleText(title))), calculated = inferred.find((title) => entry.pattern.test(titleText(title)));
     const counts = componentCounts(entry.name), sameTrial = entry.elite ? eliteSets().length : 0;
@@ -654,7 +657,7 @@ function renderMobileDashboard() {
     })));
   }
   if (!titleFor(/^Elite(?:\\s|$)/i)) {
-    const excellentMet = !!titleFor(/^Excellent(?:\\s|$)/i);
+    const excellentMet = excellentTitleMet;
     const eliteCount = eliteSets().length;
     addTarget("Elite", "Scent", [
       { done: excellentMet, text: "Excellent title prerequisite" },
