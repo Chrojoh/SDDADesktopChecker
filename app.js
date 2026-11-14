@@ -641,23 +641,84 @@ function renderMobileDashboard() {
 
 
   const targets = [];
-  for (const level of ["Started", "Advanced", "Excellent"]) { if (titleFor(new RegExp(`^${level}(?:\\s|$)`, "i"))) continue; const counts = componentCounts(level), missing = COMPONENTS.filter((component) => !counts[component]); targets.push({ name: level, kind: "Scent", needed: missing.length, items: missing.map((component) => `${component} qualifying score`) }); }
-  if (!titleFor(/^Elite(?:\s|$)/i)) targets.push({ name: "Elite", kind: "Scent", needed: titleFor(/^Excellent(?:\s|$)/i) ? 1 : 2, items: [titleFor(/^Excellent(?:\s|$)/i) ? "One complete same-trial Elite score" : "Complete Excellent prerequisite", "One complete same-trial Elite score"] });
+  const addTarget = (name, kind, items) => {
+    const needed = items.filter((item) => !item.done).length;
+    if (needed > 0) targets.push({ name, kind, needed, items });
+  };
+  for (const level of ["Started", "Advanced", "Excellent"]) {
+    if (titleFor(new RegExp(`^${level}(?:\\s|$)`, "i"))) continue;
+    const counts = componentCounts(level);
+    addTarget(level, "Scent", COMPONENTS.map((component) => ({
+      done: counts[component] > 0,
+      text: counts[component] > 0 ? `${component}: ${counts[component]} qualifying score(s)` : `${component}: qualifying score needed`
+    })));
+  }
+  if (!titleFor(/^Elite(?:\\s|$)/i)) {
+    const excellentMet = !!titleFor(/^Excellent(?:\\s|$)/i);
+    const eliteCount = eliteSets().length;
+    addTarget("Elite", "Scent", [
+      { done: excellentMet, text: "Excellent title prerequisite" },
+      { done: eliteCount > 0, text: eliteCount ? `${eliteCount} complete same-trial Elite score(s)` : "One complete same-trial Elite score needed" }
+    ]);
+  }
   const chNeeded = Math.max(Math.max(0, 5 - total), Math.max(0, 2 - excellent.length));
+  if (!championshipTitle("ch") && chNeeded > 0) addTarget("SD-CH", "Scent", [
+    { done: total >= 5, text: `${total}/5 Advanced or Excellent titling scores` },
+    { done: excellent.length >= 2, text: `${excellent.length}/2 Excellent combinations` }
+  ]);
   const machNeeded = Math.max(Math.max(0, 10 - total), Math.max(0, 3 - excellent.length), Math.max(0, 3 - gold));
+  if (!championshipTitle("mach") && machNeeded > 0) addTarget("SD-MACH", "Scent", [
+    { done: total >= 10, text: `${total}/10 Advanced or Excellent titling scores` },
+    { done: excellent.length >= 3, text: `${excellent.length}/3 Excellent combinations` },
+    { done: gold >= 3, text: `${gold}/3 Gold scores` }
+  ]);
   const elchNeeded = Math.max(Math.max(0, 5 - elite.length), Math.max(0, 2 - elite.filter((set) => set.gold).length));
-  if (!championshipTitle("ch") && chNeeded > 0) targets.push({ name: "SD-CH", kind: "Scent", needed: chNeeded, items: [`${Math.max(0, 5 - total)} more complete score combinations`, `${Math.max(0, 2 - excellent.length)} more Excellent combinations`] });
-  if (!championshipTitle("mach") && machNeeded > 0) targets.push({ name: "SD-MACH", kind: "Scent", needed: machNeeded, items: [`${Math.max(0, 10 - total)} more complete combinations`, `${Math.max(0, 3 - excellent.length)} more Excellent combinations`, `${Math.max(0, 3 - gold)} more Gold scores`] });
-  if (!championshipTitle("elch")) targets.push({ name: "SD-ELCH", kind: "Scent", needed: Math.max(1, elchNeeded), items: [`${Math.max(0, 5 - elite.length)} more Elite scores`, `${Math.max(0, 2 - elite.filter((set) => set.gold).length)} more Elite Gold scores`, "At least 2 different judges required · judge names unavailable in these files"] });
-  if (!championshipTitle("gmch")) { const missing = [!(championshipTitle("mach") || machScoresMet) && "SD-MACH", !(championshipTitle("elch") || elchScoresMet) && "SD-ELCH"].filter(Boolean); targets.push({ name: "SD-GMCH", kind: "Scent", needed: Math.max(1, missing.length), items: [...missing.map((title) => `${title} required`), "At least 3 different judges required · judge names unavailable in these files"] }); }
-  repeatMachRules.forEach((rule) => { if (championshipTitle(rule.key) || !machStageMet.get(rule.previous)) return; const previous = championshipTitle(rule.previous), progress = machExtensionProgress(rule, previous), needed = Math.max(Math.max(0, rule.total - progress.total), Math.max(0, rule.excellent - progress.excellent), Math.max(0, rule.gold - progress.gold)); targets.push({ name: rule.name, kind: "Scent", needed, items: [`${Math.max(0, rule.total - progress.total)} more new combinations`, `${Math.max(0, rule.excellent - progress.excellent)} more new Excellent combinations`, `${Math.max(0, rule.gold - progress.gold)} more new Excellent Gold scores`] }); });
-  repeatEliteRules.forEach((rule) => { if (championshipTitle(rule.key)) return; const previous = championshipTitle(rule.previous); if (!previous) return; const eligible = rowsAfter(previous.date), sets = eligible ? eliteSets(eligible) : [], eliteGold = sets.filter((set) => set.gold).length; const needed = eligible ? Math.max(Math.max(0, 5 - sets.length), Math.max(0, rule.gold - eliteGold)) : 1; targets.push({ name: rule.name, kind: "Scent", needed, items: eligible ? [`${Math.max(0, 5 - sets.length)} more new Elite scores`, `${Math.max(0, rule.gold - eliteGold)} more new Elite Gold scores`] : [`Recorded ${rule.previous.toUpperCase()} title date and complete score dates required`] }); });
-  gameTargets.filter((target) => target.needed > 0).forEach((target) => targets.push(target));
-  gameChampionships.filter((entry) => !entry.met).forEach(({ rule, remaining }) => {
-    targets.push({ name: rule.name, kind: "Games", needed: remaining, items: [rule.text, `${remaining} more pass(es) needed using all historical Games entries`] });
+  if (!championshipTitle("elch")) addTarget("SD-ELCH", "Scent", [
+    { done: elite.length >= 5, text: `${elite.length}/5 Elite scores` },
+    { done: elite.filter((set) => set.gold).length >= 2, text: `${elite.filter((set) => set.gold).length}/2 Elite Gold scores` },
+    { done: false, text: "At least 2 different judges required · judge names unavailable in these files" }
+  ]);
+  if (!championshipTitle("gmch")) addTarget("SD-GMCH", "Scent", [
+    { done: !!championshipTitle("mach") || machScoresMet, text: championshipTitle("mach") ? "SD-MACH recorded" : machScoresMet ? "SD-MACH score requirements met" : "SD-MACH required" },
+    { done: !!championshipTitle("elch") || elchScoresMet, text: championshipTitle("elch") ? "SD-ELCH recorded" : elchScoresMet ? "SD-ELCH score requirements met" : "SD-ELCH required" },
+    { done: false, text: "At least 3 different judges required · judge names unavailable in these files" }
+  ]);
+  repeatMachRules.forEach((rule) => {
+    if (championshipTitle(rule.key) || !machStageMet.get(rule.previous)) return;
+    const previous = championshipTitle(rule.previous), progress = machExtensionProgress(rule, previous);
+    addTarget(rule.name, "Scent", [
+      { done: !!previous || !!machStageMet.get(rule.previous), text: previous ? `${rule.previous.toUpperCase()} recorded` : `${rule.previous.toUpperCase()} score requirements met` },
+      { done: progress.total >= rule.total, text: `${progress.total}/${rule.total} new combinations` },
+      { done: progress.excellent >= rule.excellent, text: `${progress.excellent}/${rule.excellent} new Excellent combinations` },
+      { done: progress.gold >= rule.gold, text: `${progress.gold}/${rule.gold} new Excellent Gold scores` }
+    ]);
+  });
+  repeatEliteRules.forEach((rule) => {
+    if (championshipTitle(rule.key)) return;
+    const previous = championshipTitle(rule.previous);
+    if (!previous) return;
+    const eligible = rowsAfter(previous.date), sets = eligible ? eliteSets(eligible) : [], eliteGold = sets.filter((set) => set.gold).length;
+    addTarget(rule.name, "Scent", [
+      { done: !!previous, text: `${rule.previous.toUpperCase()} recorded` },
+      { done: !!eligible && sets.length >= 5, text: eligible ? `${sets.length}/5 new Elite scores` : "Previous-title date and complete score dates required" },
+      { done: !!eligible && eliteGold >= rule.gold, text: `${eliteGold}/${rule.gold} new Elite Gold scores` }
+    ]);
+  });
+  gameTargets.forEach((target) => {
+    if (target.needed <= 0) return;
+    const game = target.name.split(" (")[0], count = gameCounts[game];
+    addTarget(target.name, "Games", [{ done: count >= 3, text: `${count}/3 passes required for the individual title` }]);
+  });
+  gameChampionships.forEach(({ rule, met, remaining }) => {
+    if (met) return;
+    const progress = gameChampionshipProgress(gameCounts, rule);
+    addTarget(rule.name, "Games", [
+      { done: progress.primaryMet ?? false, text: rule.text },
+      { done: false, text: `${remaining} more pass(es) needed; Games passes are cumulative and not consumed by earlier titles` }
+    ]);
   });
   targets.sort((a, b) => a.needed - b.needed || a.name.localeCompare(b.name));
-  $("mobile-next-list").innerHTML = targets.map((target) => `<article class="next-card"><header><div><h3>${esc(target.name)}</h3><p class="next-kind">${esc(target.kind)}</p></div><span class="remaining-badge">${target.needed} item${target.needed === 1 ? "" : "s"}</span></header><ol>${target.items.filter((item) => !/^0 more/i.test(item)).map((item) => `<li>${esc(item)}</li>`).join("")}</ol></article>`).join("") || `<article class="next-card"><h3>Everything shown is complete</h3><p>Check with SDDA for the next eligible extension.</p></article>`;
+  $("mobile-next-list").innerHTML = targets.map((target) => `<article class="next-card"><header><div><h3>${esc(target.name)}</h3><p class="next-kind">${esc(target.kind)}</p></div><span class="remaining-badge">${target.needed} needed</span></header><ul class="requirement-list">${target.items.map((item) => `<li class="${item.done ? "done" : ""}">${item.done ? "✓ " : ""}${esc(item.text)}</li>`).join("")}</ul></article>`).join("") || `<article class="next-card"><h3>Everything shown is complete</h3><p>Check with SDDA for the next eligible extension.</p></article>`;
 }
 
 async function loadTitles(file) {
