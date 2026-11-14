@@ -530,22 +530,25 @@ function renderMobileDashboard() {
     { name: "SD-GMCH", found: championshipTitle("gmch"), met: (!!championshipTitle("mach") || machScoresMet) && (!!championshipTitle("elch") || elchScoresMet), verificationRequired: true, items: [{ done: !!championshipTitle("mach") || machScoresMet, text: championshipTitle("mach") ? "SD-MACH recorded" : machScoresMet ? "SD-MACH score requirements met" : "SD-MACH required" }, { done: !!championshipTitle("elch") || elchScoresMet, text: championshipTitle("elch") ? "SD-ELCH recorded" : elchScoresMet ? "SD-ELCH score requirements met" : "SD-ELCH required" }, { done: false, text: "At least 3 different judges required · cannot verify from these files" }] }
   ];
   const repeatMachRules = [
-    { key: "mach2", previous: "mach", name: "SD-MACH2", total: 10, excellent: 7, gold: 3, usedTotal: 10, usedExcellent: 3, usedGold: 3 },
-    { key: "mach3", previous: "mach2", name: "SD-MACH3", total: 10, excellent: 10, gold: 3, usedTotal: 20, usedExcellent: 10, usedGold: 6 },
-    { key: "mach4", previous: "mach3", name: "SD-MACH4", total: 10, excellent: 10, gold: 4, usedTotal: 30, usedExcellent: 20, usedGold: 9 }
+    { key: "mach2", previous: "mach", name: "SD-MACH2", excellent: 7, maxAdvanced: 3, gold: 3 },
+    { key: "mach3", previous: "mach2", name: "SD-MACH3", excellent: 10, gold: 3 },
+    { key: "mach4", previous: "mach3", name: "SD-MACH4", excellent: 10, gold: 4 }
   ];
   const machStageMet = new Map([["mach", !!championshipTitle("mach") || (total >= 10 && excellent.length >= 3 && gold >= 3)]]);
   repeatMachRules.forEach((rule) => {
     const found = championshipTitle(rule.key), previous = championshipTitle(rule.previous), progress = machExtensionProgress(rule, previous);
     const previousMet = !!previous || !!machStageMet.get(rule.previous);
-    const met = previousMet && progress.total >= rule.total && progress.excellent >= rule.excellent && progress.gold >= rule.gold;
-    championCards.push({ name: rule.name, found, met: !!found || (previousMet && progress.verified && progress.total >= rule.total && progress.excellent >= rule.excellent && progress.gold >= rule.gold), items: [
+    const countedAdvanced = rule.maxAdvanced ? Math.min(progress.advanced, rule.maxAdvanced) : 0;
+    const countedTotal = progress.excellent + countedAdvanced;
+    const met = previousMet && progress.verified && progress.excellent >= rule.excellent && progress.gold >= rule.gold && (!rule.maxAdvanced || countedTotal >= 10);
+    const items = [
       { done: !!previous && progress.verified, text: previous ? `${rule.previous.toUpperCase()} recorded · cutoff Trial ${progress.cutoffTrial ?? "unavailable"}` : `${rule.previous.toUpperCase()} title record needed to establish cutoff` },
-      { done: progress.verified && progress.total >= rule.total, text: `${progress.verified ? progress.total : "—"}/${rule.total} new score combinations` },
-      { done: progress.verified && progress.excellent >= rule.excellent, text: `${progress.verified ? progress.excellent : "—"}/${rule.excellent} new Excellent combinations` },
-      { done: progress.verified && progress.gold >= rule.gold, text: `${progress.verified ? progress.gold : "—"}/${rule.gold} new Excellent Gold scores` },
-      { done: progress.verified, text: progress.verified ? "Only trials after the previous title cutoff are counted" : "Upload Trial Workbook to verify the previous title's trial cutoff" }
-    ] });
+      { done: progress.verified && progress.excellent >= rule.excellent, text: `${progress.verified ? progress.excellent : "—"}/${rule.excellent} additional Excellent combinations` },
+      { done: progress.verified && progress.gold >= rule.gold, text: `${progress.verified ? progress.gold : "—"}/${rule.gold} additional Excellent Gold combinations` }
+    ];
+    if (rule.maxAdvanced) items.push({ done: progress.verified && countedTotal >= 10, text: progress.verified ? `${countedAdvanced} of up to ${rule.maxAdvanced} Advanced combinations counted · ${countedTotal}/10 total` : "Advanced score allowance cannot be checked until the previous title cutoff is known" });
+    items.push({ done: progress.verified, text: progress.verified ? `Only scores from trials after Trial ${progress.cutoffTrial} count` : "Previous title trial cutoff and complete trial numbers required" });
+    championCards.push({ name: rule.name, found, met: !!found || met, items });
     machStageMet.set(rule.key, !!found || met);
   });
   const repeatEliteRules = [
@@ -644,12 +647,14 @@ function renderMobileDashboard() {
   repeatMachRules.forEach((rule) => {
     if (championshipTitle(rule.key) || !machStageMet.get(rule.previous)) return;
     const previous = championshipTitle(rule.previous), progress = machExtensionProgress(rule, previous);
-    addTarget(rule.name, "Scent", [
-      { done: !!previous || !!machStageMet.get(rule.previous), text: previous ? `${rule.previous.toUpperCase()} recorded` : `${rule.previous.toUpperCase()} score requirements met` },
-      { done: progress.total >= rule.total, text: `${progress.total}/${rule.total} new combinations` },
-      { done: progress.excellent >= rule.excellent, text: `${progress.excellent}/${rule.excellent} new Excellent combinations` },
-      { done: progress.gold >= rule.gold, text: `${progress.gold}/${rule.gold} new Excellent Gold scores` }
-    ]);
+    const countedAdvanced = rule.maxAdvanced ? Math.min(progress.advanced, rule.maxAdvanced) : 0;
+    const countedTotal = progress.excellent + countedAdvanced;
+    addTarget(rule.name, "Scent", progress.verified ? [
+      { done: !!previous, text: previous ? `${rule.previous.toUpperCase()} recorded · cutoff Trial ${progress.cutoffTrial}` : "Previous title record needed" },
+      { done: progress.excellent >= rule.excellent, text: `${progress.excellent}/${rule.excellent} additional Excellent combinations` },
+      { done: progress.gold >= rule.gold, text: `${progress.gold}/${rule.gold} additional Excellent Gold combinations` },
+      ...(rule.maxAdvanced ? [{ done: countedTotal >= 10, text: `${countedAdvanced} Advanced combinations counted · ${countedTotal}/10 total` }] : [])
+    ] : [{ done: false, text: "Previous title trial cutoff and complete trial numbers required; only later scores may count." }]);
   });
   repeatEliteRules.forEach((rule) => {
     if (championshipTitle(rule.key)) return;
