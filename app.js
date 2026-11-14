@@ -393,21 +393,27 @@ function render() {
   ], gmch ? `Recorded ${dateLabel(gmch.date)}.` : "The score requirements can be calculated, but judge names and official title approval require SDDA confirmation."));
 
   const extensions = [
-    { key: "mach2", previous: "mach", prior: mach, title: "SD-MACH2", need: 10, excellent: 7, gold: 3, usedTotal: 10, usedExcellent: 3, usedGold: 3 },
-    { key: "mach3", previous: "mach2", prior: championshipTitle("mach2"), title: "SD-MACH3", need: 10, excellent: 10, gold: 3, usedTotal: 20, usedExcellent: 10, usedGold: 6 },
-    { key: "mach4", previous: "mach3", prior: championshipTitle("mach3"), title: "SD-MACH4", need: 10, excellent: 10, gold: 4, usedTotal: 30, usedExcellent: 20, usedGold: 9 }
+    { key: "mach2", previous: "mach", prior: mach, title: "SD-MACH2", excellent: 7, gold: 3, maxAdvanced: 3 },
+    { key: "mach3", previous: "mach2", prior: championshipTitle("mach2"), title: "SD-MACH3", excellent: 10, gold: 3 },
+    { key: "mach4", previous: "mach3", prior: championshipTitle("mach3"), title: "SD-MACH4", excellent: 10, gold: 4 }
   ];
   const legacyMachStageMet = new Map([["mach", !!mach || machScoresMet]]);
   for (const extension of extensions) {
-    const achieved = championshipTitle(extension.key), previousMet = !!extension.prior || !!legacyMachStageMet.get(extension.previous); if (!previousMet && !achieved) continue;
+    const achieved = championshipTitle(extension.key), previousMet = !!extension.prior || !!legacyMachStageMet.get(extension.previous);
+    if (!previousMet && !achieved) continue;
     const progress = machExtensionProgress(extension, extension.prior);
-    cards.push(progressCard(extension.title, achieved ? "Achieved" : progress.verified ? "In progress" : "Cannot verify cutoff", [
-      { done: !!extension.prior, text: extension.prior ? `${extension.previous.toUpperCase()} recorded ${dateLabel(extension.prior.date)} · cutoff Trial ${progress.cutoffTrial ?? "unavailable"}` : `${extension.previous.toUpperCase()} title record required to establish the starting trial` },
-      { done: progress.verified && progress.total >= extension.need, text: `${progress.verified ? progress.total : "—"}/${extension.need} new titling combinations` },
-      { done: progress.verified && progress.excellent >= extension.excellent, text: `${progress.verified ? progress.excellent : "—"}/${extension.excellent} new Excellent combinations` },
-      { done: progress.verified && progress.gold >= extension.gold, text: `${progress.verified ? progress.gold : "—"}/${extension.gold} new Excellent Gold scores` }
-    ], `${achieved ? `Recorded ${dateLabel(achieved.date)}. ` : ""}${progress.verified ? "Only trials with a number greater than the previous title cutoff count. Trials on the award date are conservatively excluded through the last trial listed that day." : "Upload the official Trial Workbook and Titles file so the previous title date can be matched to a trial number. No repeat-MACH progress is claimed without a reliable cutoff."}`));
-    legacyMachStageMet.set(extension.key, !!achieved || (previousMet && progress.total >= extension.need && progress.excellent >= extension.excellent && progress.gold >= extension.gold));
+    const countedAdvanced = extension.maxAdvanced ? Math.min(progress.advanced, extension.maxAdvanced) : 0;
+    const met = previousMet && progress.verified && progress.excellent >= extension.excellent && progress.gold >= extension.gold;
+    const requirements = [
+      { done: !!extension.prior && progress.verified, text: extension.prior ? `${extension.previous.toUpperCase()} recorded · cutoff Trial ${progress.cutoffTrial ?? "unavailable"}` : `${extension.previous.toUpperCase()} title record required to establish the cutoff` },
+      { done: progress.verified && progress.excellent >= extension.excellent, text: `${progress.verified ? progress.excellent : "—"}/${extension.excellent} additional Excellent combinations` },
+      { done: progress.verified && progress.gold >= extension.gold, text: `${progress.verified ? progress.gold : "—"}/${extension.gold} additional Excellent Gold combinations` }
+    ];
+    if (extension.maxAdvanced) requirements.push({ done: progress.verified, text: progress.verified ? `${countedAdvanced} of up to ${extension.maxAdvanced} Advanced combinations may be included (optional)` : "Advanced allowance cannot be checked until the previous title cutoff is known" });
+    requirements.push({ done: progress.verified, text: progress.verified ? `Only scores from trials after Trial ${progress.cutoffTrial} count` : "Previous title trial cutoff and complete trial numbers required" });
+    cards.push(progressCard(extension.title, achieved ? "Achieved" : !progress.verified ? "Cannot verify cutoff" : met ? "Score requirements met" : "In progress", requirements,
+      `${achieved ? `Recorded ${dateLabel(achieved.date)}. ` : ""}${progress.verified ? "Repeat MACH requirements use only scores after the previous title trial." : "Upload the Titles file and Trial Workbook to establish the prior title trial cutoff."}`));
+    legacyMachStageMet.set(extension.key, !!achieved || met);
   }
   $("progress").innerHTML = cards.join("");
 
@@ -473,13 +479,13 @@ function renderMobileDashboard() {
     const previousMet = !!previous || !!machStageMet.get(rule.previous);
     const countedAdvanced = rule.maxAdvanced ? Math.min(progress.advanced, rule.maxAdvanced) : 0;
     const countedTotal = progress.excellent + countedAdvanced;
-    const met = previousMet && progress.verified && progress.excellent >= rule.excellent && progress.gold >= rule.gold && (!rule.maxAdvanced || countedTotal >= 10);
+    const met = previousMet && progress.verified && progress.excellent >= rule.excellent && progress.gold >= rule.gold;
     const items = [
       { done: !!previous && progress.verified, text: previous ? `${rule.previous.toUpperCase()} recorded · cutoff Trial ${progress.cutoffTrial ?? "unavailable"}` : `${rule.previous.toUpperCase()} title record needed to establish cutoff` },
       { done: progress.verified && progress.excellent >= rule.excellent, text: `${progress.verified ? progress.excellent : "—"}/${rule.excellent} additional Excellent combinations` },
       { done: progress.verified && progress.gold >= rule.gold, text: `${progress.verified ? progress.gold : "—"}/${rule.gold} additional Excellent Gold combinations` }
     ];
-    if (rule.maxAdvanced) items.push({ done: progress.verified && countedTotal >= 10, text: progress.verified ? `${countedAdvanced} of up to ${rule.maxAdvanced} Advanced combinations counted · ${countedTotal}/10 total` : "Advanced score allowance cannot be checked until the previous title cutoff is known" });
+    if (rule.maxAdvanced) items.push({ done: progress.verified, text: progress.verified ? `${countedAdvanced} of up to ${rule.maxAdvanced} Advanced combinations may be included (optional)` : "Advanced score allowance cannot be checked until the previous title cutoff is known" });
     items.push({ done: progress.verified, text: progress.verified ? `Only scores from trials after Trial ${progress.cutoffTrial} count` : "Previous title trial cutoff and complete trial numbers required" });
     championCards.push({ name: rule.name, found, met: !!found || met, items });
     machStageMet.set(rule.key, !!found || met);
@@ -586,7 +592,7 @@ function renderMobileDashboard() {
       { done: !!previous, text: previous ? `${rule.previous.toUpperCase()} recorded · cutoff Trial ${progress.cutoffTrial}` : "Previous title record needed" },
       { done: progress.excellent >= rule.excellent, text: `${progress.excellent}/${rule.excellent} additional Excellent combinations` },
       { done: progress.gold >= rule.gold, text: `${progress.gold}/${rule.gold} additional Excellent Gold combinations` },
-      ...(rule.maxAdvanced ? [{ done: countedTotal >= 10, text: `${countedAdvanced} Advanced combinations counted · ${countedTotal}/10 total` }] : [])
+      ...(rule.maxAdvanced ? [{ done: progress.verified, text: `${countedAdvanced} of up to ${rule.maxAdvanced} Advanced combinations may be included (optional)` }] : [])
     ] : [{ done: false, text: "Previous title trial cutoff and complete trial numbers required; only later scores may count." }]);
   });
   repeatEliteRules.forEach((rule) => {
