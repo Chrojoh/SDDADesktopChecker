@@ -121,7 +121,6 @@ function renderGames() {
  $("games-championships").innerHTML="<h3>Games Championship progress · Rule Book v5.1</h3><div class='game-ladder'>"+progress.map(({rule,met,remaining,progressText})=>"<p><strong>"+rule.name+"</strong><span>"+rule.text+"</span><span class='status "+(met?"met":"partial")+"'>"+(met?"Pass requirements met":remaining+" more pass(es) needed")+"</span><small>"+progressText+"</small></p>").join("")+"</div><p class='level-note'>GCH requires 3 passes in each of any 3 Games. GCH2 requires 13, GCH3 18 and GCH4 25 cumulative passes across the top three Games. GCH5 requires 35 across all four Games. Passes are banked and not consumed by earlier titles.</p>";
 }
 
-
 function workbookDate(value) {
   const text = String(value ?? "").trim();
   const numeric = typeof value === "number" ? value : /^\d{4,5}(?:\.\d+)?$/.test(text) ? Number(text) : NaN;
