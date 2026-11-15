@@ -642,12 +642,12 @@ const targets = [];
   if (!championshipTitle("elch")) addTarget("SD-ELCH", "Scent", [
     { done: elite.length >= 5, text: `${elite.length}/5 Elite scores` },
     { done: elite.filter((set) => set.gold).length >= 2, text: `${elite.filter((set) => set.gold).length}/2 Elite Gold scores` },
-    { done: false, text: "At least 2 different judges required · judge names unavailable in these files" }
+    { done: false, text: { done: !!window.sddaJudgeVerification.elch, text: window.sddaJudgeVerification.elch ? "Handler confirms at least 2 different judges for qualifying Elite scores" : "Handler confirmation needed: at least 2 different judges for qualifying Elite scores" } }
   ]);
   if (!championshipTitle("gmch")) addTarget("SD-GMCH", "Scent", [
     { done: !!championshipTitle("mach") || machScoresMet, text: championshipTitle("mach") ? "SD-MACH recorded" : machScoresMet ? "SD-MACH score requirements met" : "SD-MACH required" },
     { done: !!championshipTitle("elch"), text: championshipTitle("elch") ? "SD-ELCH recorded" : elchScoresMet ? "SD-ELCH score requirements met · at least 2 judges still need verification" : "SD-ELCH required" },
-    { done: false, text: "At least 3 different judges required · judge names unavailable in these files" }
+    { done: false, text: { done: !!window.sddaJudgeVerification.gmch, text: window.sddaJudgeVerification.gmch ? "Handler confirms at least 3 different judges for qualifying Scent scores" : "Handler confirmation needed: at least 3 different judges for qualifying Scent scores" } }
   ]);
   repeatMachRules.forEach((rule) => {
     if (championshipTitle(rule.key) || !machStageMet.get(rule.previous)) return;
