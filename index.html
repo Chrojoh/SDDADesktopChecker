@@ -55,5 +55,110 @@
     <div hidden><input id="workbook-file" type="file"><span id="workbook-name"></span></div>
   </main>
   <footer class="mobile-footer">Independent planning aid. SDDA remains the authority for official title approval.</footer>
-  <script src="vendor/xlsx.full.min.js"></script><script src="vendor/pdf-lib.min.js"></script><script src="app.js?v=20261114-infermachfix4"></script>
-</body></html>
+  <script src="vendor/xlsx.full.min.js"></script><script src="vendor/pdf-lib.min.js"></script><script src="app.js?v=20261115-saved-dogs1"></script>
+
+<script>
+(function(){
+"use strict";
+const DB_NAME="sdda-achievement-ledger", STORE="dogs", DB_VERSION=1;
+let dbPromise;
+function openDb(){
+ if(!("indexedDB" in window)) return Promise.resolve(null);
+ if(!dbPromise) dbPromise=new Promise((resolve,reject)=>{
+  const request=indexedDB.open(DB_NAME,DB_VERSION);
+  request.onupgradeneeded=()=>{const db=request.result;if(!db.objectStoreNames.contains(STORE))db.createObjectStore(STORE,{keyPath:"id"});};
+  request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error);
+ }).catch(()=>null);
+ return dbPromise;
+}
+async function dbAction(mode, action){
+ const db=await openDb(); if(!db)return null;
+ return new Promise((resolve,reject)=>{const tx=db.transaction(STORE,mode),store=tx.objectStore(STORE);let req;
+  try{req=action(store);}catch(e){reject(e);return;}
+  tx.oncomplete=()=>resolve(req?req.result:undefined);tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error);
+ });
+}
+const fallbackKey="sdda-ledger-saved-dogs-v1";
+function fallbackRead(){try{return JSON.parse(localStorage.getItem(fallbackKey)||"[]");}catch(_){return [];}}
+function dogId(){const first=scores[0]||games[0]||{};const number=String(first.dogNumber||"").trim();const name=String(first.dog||"").trim();return number?"number:"+number:"name:"+name.toLowerCase();}
+function currentProfile(){
+ const first=scores[0]||games[0]||{};
+ if(!first.dogNumber&&!first.dog)return null;
+ return {id:dogId(),dogNumber:String(first.dogNumber||""),dog:String(first.dog||""),scores,games,titles,trialDates:[...trialDates.entries()],dateMatches,judgeVerification:window.sddaJudgeVerification||{elch:false,gmch:false},updatedAt:new Date().toISOString()};
+}
+async function putProfile(profile){
+ const db=await openDb();
+ if(db){await dbAction("readwrite",s=>s.put(profile));return;}
+ const all=fallbackRead(),idx=all.findIndex(x=>x.id===profile.id);if(idx>=0)all[idx]=profile;else all.push(profile);
+ try{localStorage.setItem(fallbackKey,JSON.stringify(all));}catch(e){throw new Error("This browser's local storage is full. Export a backup or remove an old saved dog.");}
+}
+async function allProfiles(){
+ const db=await openDb();if(db){return await dbAction("readonly",s=>s.getAll())||[];}return fallbackRead();
+}
+async function getProfile(id){
+ const db=await openDb();if(db)return await dbAction("readonly",s=>s.get(id));
+ return fallbackRead().find(x=>x.id===id)||null;
+}
+async function deleteProfile(id){
+ const db=await openDb();if(db){await dbAction("readwrite",s=>s.delete(id));return;}
+ localStorage.setItem(fallbackKey,JSON.stringify(fallbackRead().filter(x=>x.id!==id)));
+}
+function labelFor(p){return (p.dog||("SDDA dog #"+p.dogNumber))+" · #"+(p.dogNumber||"unknown");}
+async function refreshProfiles(selected){
+ const select=document.getElementById("sdda-saved-dogs");if(!select)return;
+ const list=(await allProfiles()).sort((a,b)=>labelFor(a).localeCompare(labelFor(b)));
+ select.innerHTML='<option value="">Select a saved dog…</option>'+list.map(p=>'<option value="'+String(p.id).replace(/&/g,"&amp;").replace(/"/g,"&quot;")+'">'+labelFor(p).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")+'</option>').join("");
+ if(selected)select.value=selected;
+}
+async function saveCurrent(){
+ const profile=currentProfile();if(!profile)return;
+ profile.judgeVerification=window.sddaJudgeVerification||{elch:false,gmch:false};
+ await putProfile(profile);await refreshProfiles(profile.id);
+ const msg=document.getElementById("message");if(msg)msg.textContent="Saved "+(profile.dog||("SDDA dog #"+profile.dogNumber))+" on this device. Your score and title files remain available here.";
+}
+async function loadSelected(){
+ const select=document.getElementById("sdda-saved-dogs"),id=select&&select.value;if(!id)return;
+ const p=await getProfile(id);if(!p)return;
+ scores=p.scores||[];games=p.games||[];titles=p.titles||[];trialDates=new Map(p.trialDates||[]);dateMatches=p.dateMatches||0;
+ window.sddaJudgeVerification=p.judgeVerification||{elch:false,gmch:false};
+ const elch=document.getElementById("judge-elch"),gmch=document.getElementById("judge-gmch");
+ if(elch)elch.checked=!!window.sddaJudgeVerification.elch;if(gmch)gmch.checked=!!window.sddaJudgeVerification.gmch;
+ const sn=document.getElementById("scores-name"),tn=document.getElementById("titles-name");
+ if(sn)sn.textContent="Loaded saved dog scores · "+scores.length+" scored components · "+games.length+" Games passes";
+ if(tn)tn.textContent="Loaded saved dog titles · "+titles.length+" recorded titles";
+ if(typeof render==="function")render();
+ const msg=document.getElementById("message");if(msg)msg.textContent="Loaded "+labelFor(p)+" from this device.";
+}
+function downloadBackup(){
+ allProfiles().then(list=>{
+  const blob=new Blob([JSON.stringify({format:"SDDA-Ledger-Backup",version:1,dogs:list},null,2)],{type:"application/json"});
+  const url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download="SDDA-Dog-Records-Backup.json";a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+ });
+}
+async function restoreBackup(file){
+ const data=JSON.parse(await file.text());if(data.format!=="SDDA-Ledger-Backup"||!Array.isArray(data.dogs))throw new Error("This is not a valid SDDA Ledger backup.");
+ for(const p of data.dogs){if(!p.id||!Array.isArray(p.scores)||!Array.isArray(p.titles))continue;await putProfile(p);}
+ await refreshProfiles();const msg=document.getElementById("message");if(msg)msg.textContent="Backup restored. Select a saved dog to open its records.";
+}
+window.sddaJudgeVerification={elch:false,gmch:false};
+const originalLoadScores=loadScores,originalLoadTitles=loadTitles,originalLoadTrialWorkbook=loadTrialWorkbook;
+loadScores=async function(file){await originalLoadScores(file);await saveCurrent();};
+loadTitles=async function(file){await originalLoadTitles(file);await saveCurrent();};
+loadTrialWorkbook=async function(file){await originalLoadTrialWorkbook(file);await saveCurrent();};
+document.addEventListener("DOMContentLoaded",()=>{});
+const select=document.getElementById("sdda-saved-dogs");
+if(select)refreshProfiles();
+document.getElementById("sdda-load-dog")?.addEventListener("click",()=>loadSelected().catch(e=>alert(e.message)));
+document.getElementById("sdda-save-dog")?.addEventListener("click",()=>saveCurrent().catch(e=>alert(e.message)));
+document.getElementById("sdda-delete-dog")?.addEventListener("click",async()=>{const id=document.getElementById("sdda-saved-dogs")?.value;if(!id)return;if(!confirm("Delete this saved dog and its locally stored records?"))return;await deleteProfile(id);await refreshProfiles();});
+document.getElementById("sdda-backup")?.addEventListener("click",downloadBackup);
+document.getElementById("sdda-restore-file")?.addEventListener("change",e=>{if(e.target.files[0])restoreBackup(e.target.files[0]).catch(err=>alert(err.message));});
+const elchBox=document.getElementById("judge-elch"),gmchBox=document.getElementById("judge-gmch");
+function updateJudgeAttestation(){
+ window.sddaJudgeVerification={elch:!!elchBox?.checked,gmch:!!gmchBox?.checked};
+ if(typeof render==="function"&&scores.length)render();
+ if(scores.length)saveCurrent().catch(e=>{const msg=document.getElementById("message");if(msg)msg.textContent=e.message;});
+}
+elchBox?.addEventListener("change",updateJudgeAttestation);gmchBox?.addEventListener("change",updateJudgeAttestation);
+})();
+</script></body></html>
