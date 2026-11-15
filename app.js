@@ -8,6 +8,9 @@ let currentPdfUrl = "";
 window.sddaJudgeVerification = window.sddaJudgeVerification || { elch: false, gmch: false };
 
 const $ = (id) => document.getElementById(id);
+const pendingCheckStyle = document.createElement("style");
+pendingCheckStyle.textContent = ".requirements li.pending,.requirement-list li.pending,.next-card li.pending{color:#b42318!important;font-weight:600}";
+document.head.appendChild(pendingCheckStyle);
 const esc = (value) => String(value ?? "").replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[character]));
 function localDateStamp(date = new Date()) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
@@ -308,7 +311,7 @@ function displayedTitles() { return titles.length ? titles.map((title) => ({ ...
 function progressCard(title, status, requirements, note = "") {
   const met = status === "Achieved" || status === "Requirements shown as met";
   const statusClass = met ? "met" : status.includes("cannot") || status.includes("verification") ? "unknown" : "partial";
-  return `<article class="progress-card"><h3>${esc(title)}</h3><span class="status ${statusClass}">${esc(status)}</span><ul class="requirements">${requirements.map((requirement) => `<li class="${requirement.done ? "done" : ""}${requirement.info ? " info" : ""}">${esc(requirement.text)}</li>`).join("")}</ul>${note ? `<p>${esc(note)}</p>` : ""}</article>`;
+  return `<article class="progress-card"><h3>${esc(title)}</h3><span class="status ${statusClass}">${esc(status)}</span><ul class="requirements">${requirements.map((requirement) => `<li class="${requirement.done ? "done" : ""}${requirement.info ? " info" : ""}">${esc(requirement.text)}</li>`).join("")}</ul>${requirements.some((requirement) => requirement.pending) ? `<p class="verification-legend" style="color:#b42318;font-size:.88em">Red ✓ = handler-reported judge minimum; awaiting SDDA confirmation.</p>` : ""}${note ? `<p>${esc(note)}</p>` : ""}</article>`;
 }
 
 function titlePattern(level) { return new RegExp(`^${level}(?:\\s|$)`, "i"); }
@@ -496,16 +499,16 @@ function render() {
 
   const elSets = eliteSets(), elGolds = elSets.filter((set) => set.gold), elch = championshipTitle("elch");
   const elchScoresMet = elSets.length >= 5 && elGolds.length >= 2;
-  cards.push(progressCard("SD-ELCH", elch ? "Achieved" : elchScoresMet ? (window.sddaJudgeVerification.elch ? "Score requirements met; handler confirmed judge count" : "Score requirements met; judge confirmation needed") : "In progress", [
+  cards.push(progressCard("SD-ELCH", elch ? "Achieved" : elchScoresMet ? (window.sddaJudgeVerification.elch ? "Score requirements met · SDDA judge confirmation pending" : "Score requirements met · judge confirmation needed") : "In progress", [
     { done: elSets.length >= 5, text: `${elSets.length}/5 complete same-trial Elite scores` },
     { done: elGolds.length >= 2, text: `${elGolds.length}/2 calculated Elite Gold scores` },
-    { done: !!window.sddaJudgeVerification.elch, text: window.sddaJudgeVerification.elch ? "Handler confirms qualifying Elite scores were earned under at least 2 different judges" : "Handler confirmation: qualifying Elite scores under at least 2 different judges" }
+    { done: !!window.sddaJudgeVerification.elch, pending: !!window.sddaJudgeVerification.elch, text: window.sddaJudgeVerification.elch ? "Handler confirms qualifying Elite scores were earned under at least 2 different judges" : "Handler confirmation: qualifying Elite scores under at least 2 different judges" }
   ], elch ? `Recorded ${dateLabel(elch.date)}.` : "Trial numbers are used to group Elite components."));
   const machScoresMet = totalSets >= 10 && excellentSets >= 3 && golds.length >= 3;
   const gmch = championshipTitle("gmch");
   const gmchScoresMet = (!!mach || machScoresMet) && (!!elch || elchScoresMet);
-  cards.push(progressCard("SD-GMCH", gmch ? "Achieved" : gmchScoresMet ? (window.sddaJudgeVerification.gmch ? "Score requirements met; handler confirmed judge count" : "Score requirements met; judge confirmation needed") : "In progress", [
-    { done: !!mach || machScoresMet, text: mach ? "SD-MACH recorded" : machScoresMet ? "Calculated SD-MACH score requirements met" : "SD-MACH required" }, { done: !!elch, text: elch ? "SD-ELCH recorded" : elchScoresMet ? "SD-ELCH score requirements met · at least 2 judges still need verification" : "SD-ELCH required" }, { done: !!window.sddaJudgeVerification.gmch, text: window.sddaJudgeVerification.gmch ? "Handler confirms qualifying Scent scores were earned under at least 3 different judges" : "Handler confirmation: qualifying Scent scores under at least 3 different judges" }
+  cards.push(progressCard("SD-GMCH", gmch ? "Achieved" : gmchScoresMet ? (window.sddaJudgeVerification.gmch ? "Score requirements met · SDDA judge confirmation pending" : "Score requirements met · judge confirmation needed") : "In progress", [
+    { done: !!mach || machScoresMet, text: mach ? "SD-MACH recorded" : machScoresMet ? "Calculated SD-MACH score requirements met" : "SD-MACH required" }, { done: !!elch || elchScoresMet, pending: !elch && elchScoresMet, text: elch ? "SD-ELCH recorded by SDDA" : elchScoresMet ? "SD-ELCH score requirements met · judge minimum awaiting SDDA confirmation" : "SD-ELCH required" }, { done: !!window.sddaJudgeVerification.gmch, pending: !!window.sddaJudgeVerification.gmch, text: window.sddaJudgeVerification.gmch ? "Handler confirms qualifying Scent scores were earned under at least 3 different judges" : "Handler confirmation: qualifying Scent scores under at least 3 different judges" }
   ], gmch ? `Recorded ${dateLabel(gmch.date)}.` : "The score requirements can be calculated, but judge names and official title approval require SDDA confirmation."));
 
   const extensions = [
@@ -555,7 +558,7 @@ function renderMobileDashboard() {
   if (!scentTarget) return;
   const inferred = inferredTitles(), shown = displayedTitles();
   const titleFor = (pattern) => shown.find((title) => pattern.test(titleText(title))) || inferred.find((title) => pattern.test(titleText(title)));
-  const reqList = (items) => `<ul class="requirement-list">${items.map((item) => `<li class="${item.done ? "done" : ""}">${esc(item.text)}</li>`).join("")}</ul>`;
+  const reqList = (items) => `<ul class="requirement-list">${items.map((item) => `<li class="${item.pending ? "pending" : item.done ? "done" : ""}">${item.pending ? "✓ " : item.done ? "✓ " : ""}${esc(item.text)}</li>`).join("")}</ul>${items.some((item) => item.pending) ? `<p class="verification-legend" style="color:#b42318;font-size:.88em">Red ✓ = handler-reported judge minimum; awaiting SDDA confirmation.</p>` : ""}`;
   const accordion = ({ name, subtitle, achieved, date, body, accent = "" }) => `<details class="title-accordion ${accent}"><summary><span class="summary-copy"><strong>${esc(name)}</strong><small>${esc(subtitle)}</small></span>${achieved ? (date ? `<span class="achievement-date">${esc(dateLabel(date))}</span>` : `<span class="achievement-check" aria-label="Achieved">✓</span>`) : ""}<span class="chevron" aria-hidden="true">⌄</span></summary><div class="accordion-body">${body}</div></details>`;
   const levelTitles = [
     { name: "Started", pattern: /^Started(?:\s|$)/i }, { name: "Advanced", pattern: /^Advanced(?:\s|$)/i },
@@ -581,8 +584,8 @@ function renderMobileDashboard() {
   const championCards = [
     { name: "SD-CH", found: championshipTitle("ch"), met: total >= 5 && excellent.length >= 2, items: [{ done: total >= 5, text: `${total}/5 Advanced or Excellent scores` }, { done: excellent.length >= 2, text: `${excellent.length}/2 must be Excellent` }] },
     { name: "SD-MACH", found: championshipTitle("mach"), met: total >= 10 && excellent.length >= 3 && gold >= 3, items: [{ done: total >= 10, text: `${total}/10 Advanced or Excellent scores` }, { done: excellent.length >= 3, text: `${excellent.length}/3 must be Excellent` }, { done: gold >= 3, text: `${gold}/3 Gold scores` }] },
-    { name: "SD-ELCH", found: championshipTitle("elch"), met: elite.length >= 5 && elite.filter((set) => set.gold).length >= 2, verificationRequired: true, items: [{ done: elite.length >= 5, text: `${elite.length}/5 complete Elite scores` }, { done: elite.filter((set) => set.gold).length >= 2, text: `${elite.filter((set) => set.gold).length}/2 Elite Gold scores` }, { done: !!window.sddaJudgeVerification.elch, text: window.sddaJudgeVerification.elch ? "Handler confirms at least 2 different judges for qualifying Elite scores" : "Handler confirmation needed: at least 2 different judges for qualifying Elite scores" }] },
-    { name: "SD-GMCH", found: championshipTitle("gmch"), met: (!!championshipTitle("mach") || machScoresMet) && (!!championshipTitle("elch") || elchScoresMet), verificationRequired: true, items: [{ done: !!championshipTitle("mach") || machScoresMet, text: championshipTitle("mach") ? "SD-MACH recorded" : machScoresMet ? "SD-MACH score requirements met" : "SD-MACH required" }, { done: !!championshipTitle("elch"), text: championshipTitle("elch") ? "SD-ELCH recorded" : elchScoresMet ? "SD-ELCH score requirements met · at least 2 judges still need verification" : "SD-ELCH required" }, { done: !!window.sddaJudgeVerification.gmch, text: window.sddaJudgeVerification.gmch ? "Handler confirms at least 3 different judges for qualifying Scent scores" : "Handler confirmation needed: at least 3 different judges for qualifying Scent scores" }] }
+    { name: "SD-ELCH", found: championshipTitle("elch"), met: elite.length >= 5 && elite.filter((set) => set.gold).length >= 2, verificationRequired: true, items: [{ done: elite.length >= 5, text: `${elite.length}/5 complete Elite scores` }, { done: elite.filter((set) => set.gold).length >= 2, text: `${elite.filter((set) => set.gold).length}/2 Elite Gold scores` }, { done: !!window.sddaJudgeVerification.elch, pending: !!window.sddaJudgeVerification.elch, text: window.sddaJudgeVerification.elch ? "Handler confirms at least 2 different judges for qualifying Elite scores" : "Handler confirmation needed: at least 2 different judges for qualifying Elite scores" }] },
+    { name: "SD-GMCH", found: championshipTitle("gmch"), met: (!!championshipTitle("mach") || machScoresMet) && (!!championshipTitle("elch") || elchScoresMet), verificationRequired: true, items: [{ done: !!championshipTitle("mach") || machScoresMet, text: championshipTitle("mach") ? "SD-MACH recorded" : machScoresMet ? "SD-MACH score requirements met" : "SD-MACH required" }, { done: !!championshipTitle("elch") || elchScoresMet, pending: !championshipTitle("elch") && elchScoresMet, text: championshipTitle("elch") ? "SD-ELCH recorded by SDDA" : elchScoresMet ? "SD-ELCH score requirements met · judge minimum awaiting SDDA confirmation" : "SD-ELCH required" }, { done: !!window.sddaJudgeVerification.gmch, pending: !!window.sddaJudgeVerification.gmch, text: window.sddaJudgeVerification.gmch ? "Handler confirms at least 3 different judges for qualifying Scent scores" : "Handler confirmation needed: at least 3 different judges for qualifying Scent scores" }] }
   ];
   const repeatMachRules = [
     { key: "mach2", previous: "mach", name: "SD-MACH2", excellent: 7, maxAdvanced: 3, gold: 3 },
@@ -690,16 +693,16 @@ const targets = [];
     { done: excellent.length >= 3, text: `${excellent.length}/3 Excellent combinations` },
     { done: gold >= 3, text: `${gold}/3 Gold scores` }
   ]);
-  const elchNeeded = Math.max(Math.max(0, 5 - elite.length), Math.max(0, 2 - elite.filter((set) => set.gold).length));
+  const elchNeeded = Math.max(Math.max(0, 5 - elite.length), Math.max(0, 2 - elite.filter((set) => set.gold).length), window.sddaJudgeVerification.elch ? 0 : 1);
   if (!championshipTitle("elch")) addTarget("SD-ELCH", "Scent", [
     { done: elite.length >= 5, text: `${elite.length}/5 Elite scores` },
     { done: elite.filter((set) => set.gold).length >= 2, text: `${elite.filter((set) => set.gold).length}/2 Elite Gold scores` },
-    { done: false, text: { done: !!window.sddaJudgeVerification.elch, text: window.sddaJudgeVerification.elch ? "Handler confirms at least 2 different judges for qualifying Elite scores" : "Handler confirmation needed: at least 2 different judges for qualifying Elite scores" } }
+    { done: !!window.sddaJudgeVerification.elch, pending: !!window.sddaJudgeVerification.elch, text: window.sddaJudgeVerification.elch ? "Handler confirms at least 2 different judges · SDDA confirmation pending" : "Handler confirmation needed: at least 2 different judges for qualifying Elite scores" }
   ]);
   if (!championshipTitle("gmch")) addTarget("SD-GMCH", "Scent", [
     { done: !!championshipTitle("mach") || machScoresMet, text: championshipTitle("mach") ? "SD-MACH recorded" : machScoresMet ? "SD-MACH score requirements met" : "SD-MACH required" },
-    { done: !!championshipTitle("elch"), text: championshipTitle("elch") ? "SD-ELCH recorded" : elchScoresMet ? "SD-ELCH score requirements met · at least 2 judges still need verification" : "SD-ELCH required" },
-    { done: false, text: { done: !!window.sddaJudgeVerification.gmch, text: window.sddaJudgeVerification.gmch ? "Handler confirms at least 3 different judges for qualifying Scent scores" : "Handler confirmation needed: at least 3 different judges for qualifying Scent scores" } }
+    { done: !!championshipTitle("elch") || elchScoresMet, pending: !championshipTitle("elch") && elchScoresMet, text: championshipTitle("elch") ? "SD-ELCH recorded by SDDA" : elchScoresMet ? "SD-ELCH score requirements met · judge minimum awaiting SDDA confirmation" : "SD-ELCH required" },
+    { done: !!window.sddaJudgeVerification.gmch, pending: !!window.sddaJudgeVerification.gmch, text: window.sddaJudgeVerification.gmch ? "Handler confirms at least 3 different judges · SDDA confirmation pending" : "Handler confirmation needed: at least 3 different judges for qualifying Scent scores" }
   ]);
   repeatMachRules.forEach((rule) => {
     if (championshipTitle(rule.key) || !machStageMet.get(rule.previous)) return;
@@ -739,7 +742,7 @@ const targets = [];
     ]);
   });
   targets.sort((a, b) => a.needed - b.needed || a.name.localeCompare(b.name));
-  $("mobile-next-list").innerHTML = targets.map((target) => `<article class="next-card"><header><div><h3>${esc(target.name)}</h3><p class="next-kind">${esc(target.kind)}</p></div><span class="remaining-badge">${target.needed} needed</span></header><ul class="requirement-list">${target.items.map((item) => `<li class="${item.done ? "done" : ""}">${item.done ? "✓ " : ""}${esc(item.text)}</li>`).join("")}</ul></article>`).join("") || `<article class="next-card"><h3>Everything shown is complete</h3><p>Check with SDDA for the next eligible extension.</p></article>`;
+  $("mobile-next-list").innerHTML = targets.map((target) => `<article class="next-card"><header><div><h3>${esc(target.name)}</h3><p class="next-kind">${esc(target.kind)}</p></div><span class="remaining-badge">${target.needed} needed</span></header><ul class="requirement-list">${target.items.map((item) => `<li class="${item.pending ? "pending" : item.done ? "done" : ""}">${item.pending ? "✓ " : item.done ? "✓ " : ""}${esc(item.text)}</li>`).join("")}</ul>${target.items.some((item) => item.pending) ? `<p class="verification-legend" style="color:#b42318;font-size:.88em">Red ✓ = handler-reported judge minimum; awaiting SDDA confirmation.</p>` : ""}</article>`).join("") || `<article class="next-card"><h3>Everything shown is complete</h3><p>Check with SDDA for the next eligible extension.</p></article>`;
 }
 
 async function loadTitles(file) {
