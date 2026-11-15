@@ -8,6 +8,9 @@ let currentPdfUrl = "";
 window.sddaJudgeVerification = window.sddaJudgeVerification || { elch: false, gmch: false };
 
 const $ = (id) => document.getElementById(id);
+const pendingCheckStyle = document.createElement("style");
+pendingCheckStyle.textContent = ".requirements li.pending,.requirement-list li.pending,.next-card li.pending{color:#b42318!important;font-weight:600}";
+document.head.appendChild(pendingCheckStyle);
 const esc = (value) => String(value ?? "").replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[character]));
 function localDateStamp(date = new Date()) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
@@ -555,7 +558,7 @@ function renderMobileDashboard() {
   if (!scentTarget) return;
   const inferred = inferredTitles(), shown = displayedTitles();
   const titleFor = (pattern) => shown.find((title) => pattern.test(titleText(title))) || inferred.find((title) => pattern.test(titleText(title)));
-  const reqList = (items) => `<ul class="requirement-list">${items.map((item) => `<li class="${item.pending ? "pending" : item.done ? "done" : ""}"${item.pending ? " style=\\"color:#b42318;font-weight:600\\"" : ""}>${item.pending ? "✓ " : item.done ? "✓ " : ""}${esc(item.text)}</li>`).join("")}</ul>${items.some((item) => item.pending) ? `<p class="verification-legend" style="color:#b42318;font-size:.88em">Red ✓ = handler-reported judge minimum; awaiting SDDA confirmation.</p>` : ""}`;
+  const reqList = (items) => `<ul class="requirement-list">${items.map((item) => `<li class="${item.pending ? "pending" : item.done ? "done" : ""}">${item.pending ? "✓ " : item.done ? "✓ " : ""}${esc(item.text)}</li>`).join("")}</ul>${items.some((item) => item.pending) ? `<p class="verification-legend" style="color:#b42318;font-size:.88em">Red ✓ = handler-reported judge minimum; awaiting SDDA confirmation.</p>` : ""}`;
   const accordion = ({ name, subtitle, achieved, date, body, accent = "" }) => `<details class="title-accordion ${accent}"><summary><span class="summary-copy"><strong>${esc(name)}</strong><small>${esc(subtitle)}</small></span>${achieved ? (date ? `<span class="achievement-date">${esc(dateLabel(date))}</span>` : `<span class="achievement-check" aria-label="Achieved">✓</span>`) : ""}<span class="chevron" aria-hidden="true">⌄</span></summary><div class="accordion-body">${body}</div></details>`;
   const levelTitles = [
     { name: "Started", pattern: /^Started(?:\s|$)/i }, { name: "Advanced", pattern: /^Advanced(?:\s|$)/i },
@@ -739,7 +742,7 @@ const targets = [];
     ]);
   });
   targets.sort((a, b) => a.needed - b.needed || a.name.localeCompare(b.name));
-  $("mobile-next-list").innerHTML = targets.map((target) => `<article class="next-card"><header><div><h3>${esc(target.name)}</h3><p class="next-kind">${esc(target.kind)}</p></div><span class="remaining-badge">${target.needed} needed</span></header><ul class="requirement-list">${target.items.map((item) => `<li class="${item.pending ? "pending" : item.done ? "done" : ""}"${item.pending ? " style=\"color:#b42318;font-weight:600\"" : ""}>${item.pending ? "✓ " : item.done ? "✓ " : ""}${esc(item.text)}</li>`).join("")}</ul></article>`).join("") || `<article class="next-card"><h3>Everything shown is complete</h3><p>Check with SDDA for the next eligible extension.</p></article>`;
+  $("mobile-next-list").innerHTML = targets.map((target) => `<article class="next-card"><header><div><h3>${esc(target.name)}</h3><p class="next-kind">${esc(target.kind)}</p></div><span class="remaining-badge">${target.needed} needed</span></header><ul class="requirement-list">${target.items.map((item) => `<li class="${item.pending ? "pending" : item.done ? "done" : ""}">${item.pending ? "✓ " : item.done ? "✓ " : ""}${esc(item.text)}</li>`).join("")}</ul></article>`).join("") || `<article class="next-card"><h3>Everything shown is complete</h3><p>Check with SDDA for the next eligible extension.</p></article>`;
 }
 
 async function loadTitles(file) {
