@@ -678,22 +678,33 @@ function renderMobileDashboard() {
     return accordion({ name: `${game} · SD-G${game[0]}`, subtitle: met ? "Current-rule pass requirement met" : `${gameCounts[game]}/3 passes`, achieved: met, body: reqList(details) });
   }).join("");
 
-  const gameChampionships = GAME_CHAMPIONSHIP_RULES.map((rule) => { const found = championshipTitle(rule.key), progress = gameChampionshipProgress(gameCounts, rule); return { rule, found, ...progress, met: progress.met || !!found }; });
-  $("mobile-game-titles").innerHTML += gameChampionships.map(({ rule, found, met, remaining, progressText, qualifiedGames }) =>
-    accordion({
-      name: rule.name,
-      subtitle: found ? "Recorded by SDDA" : met ? "Current-rule pass requirements met" : rule.type === "base" ? qualifiedGames + "/3 Games qualifying" : String(remaining) + " more qualifying passes needed",
-      achieved: met,
-      date: found?.date,
-      body: reqList([
-        { done: progress.met || !!found, text: rule.type === "base" ? progressText : rule.text },
-        { done: false, text: "Progression information: GCH2 adds 4 passes, GCH3 adds 5 more, GCH4 adds 7 more, and GCH5 adds 10 more across all four Games. Games passes are banked and may be used toward repeat titles." },
-        { done: false, text: found ? "Title recorded by SDDA " + dateLabel(found.date) : titlesFileLoaded ? "Official award not shown in the uploaded Titles file" : "Titles file not uploaded" },
-        { done: rule.type !== "base" && (progress.met || !!found), text: rule.type === "base" ? "Initial SD-GCH requires 3 passes in each of any 3 Games." : progressText }
-      ]),
-      accent: "level-accent-elite"
-    })
-  ).join("");
+  const gameChampionships = GAME_CHAMPIONSHIP_RULES.map((rule) => {
+    const found = championshipTitle(rule.key);
+    const progress = gameChampionshipProgress(gameCounts, rule);
+    const stageStart = ({ gch2: 0, gch3: 4, gch4: 9, gch5: 16 })[rule.key] ?? 0;
+    const stageSize = ({ gch2: 4, gch3: 5, gch4: 7, gch5: 10 })[rule.key] ?? 0;
+    const stageProgress = Math.min(stageSize, Math.max(0, progress.extras - stageStart));
+    const stageMet = rule.type === "base" ? progress.met : stageProgress >= stageSize && progress.baseMet && (rule.type !== "four" || GAME_NAMES.every((game) => gameCounts[game] > 0));
+    return { rule, found, progress, stageProgress, stageSize, stageMet };
+  });
+  const progressionRows = [
+    { done: false, text: titlesFileLoaded ? "Titles file uploaded · official award records are shown when matched" : "Titles file not uploaded" },
+    { done: !!gameChampionships[0].found || gameChampionships[0].stageMet, text: gameChampionships[0].found ? "Initial SD-GCH · Recorded by SDDA" : gameChampionships[0].progress.progressText },
+    ...gameChampionships.slice(1).map(({ rule, found, stageProgress, stageSize, stageMet, progress }) => ({
+      done: !!found || stageMet,
+      text: found
+        ? rule.name + " · Recorded by SDDA"
+        : rule.name + " · " + stageProgress + "/" + stageSize + " additional passes " + (rule.type === "four" ? "across all 4 Games" : "across any 3 Games") +
+          (rule.type === "four" && !GAME_NAMES.every((game) => gameCounts[game] > 0) ? " · all 4 Games must be represented" : "")
+    })),
+    { done: false, text: "Progression: Initial SD-GCH requires 3 passes in each of any 3 Games. GCH2 adds 4 passes, GCH3 adds 5 more, GCH4 adds 7 more, and GCH5 adds 10 more across all 4 Games. Games passes are banked and may be used toward repeat titles." }
+  ];
+  $("mobile-game-titles").innerHTML += accordion({
+    name: "Games Championship Progression",
+    subtitle: "SD-GCH through SD-GCH5",
+    body: reqList(progressionRows),
+    accent: "level-accent-elite"
+  });
   $("mobile-game-runs").innerHTML = "";
 
 const targets = [];
