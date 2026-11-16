@@ -910,7 +910,7 @@ const targets = [];
     const counts = componentCounts(level);
     addTarget(level, "Scent", COMPONENTS.map((component) => ({
       done: counts[component] > 0,
-      text: counts[component] > 0 ? `${component}: ${counts[component]} qualifying score(s)` : `${component}: qualifying score needed`
+      text: `${component}: ${counts[component]} / 1 qualifying score(s) (have / need)`
     })));
   }
   if (!titleFor(/^Elite(?:\\s|$)/i)) {
