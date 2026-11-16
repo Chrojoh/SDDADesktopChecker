@@ -774,7 +774,7 @@ const targets = [];
     const progress = gameChampionshipProgress(gameCounts, rule);
     addTarget(rule.name, "Games", [
       { done: progress.baseMet, text: `${progress.qualifiedGames}/3 Games have at least 3 passes (${progress.trio.join(", ")})` },
-      { done: rule.type === "base" ? progress.baseMet : progress.extras >= rule.target && (rule.type !== "four" || progress.allFourTotal >= 1), text: rule.type === "base" ? `${progress.topThreeTotal} total passes across the qualifying Games` : `${progress.extras}/${rule.target} additional passes ${rule.type === "four" ? "across all four Games" : "across the top three Games"}` }
+      { done: progress.met, text: rule.type === "base" ? `${progress.topThreeTotal} total passes across the qualifying Games` : `${progress.extras}/${rule.target} additional passes ${rule.type === "four" ? "across all four Games" : "across the top three Games"}` }
     ], remaining);
   });
   targets.sort((a, b) => a.needed - b.needed || a.name.localeCompare(b.name));
