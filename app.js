@@ -4,6 +4,7 @@ const COMPONENTS = ["Container", "Exterior", "Interior"];
 const LEVELS = ["Started", "Advanced", "Excellent", "Elite"];
 const GAME_NAMES = ["Aerial", "Distance", "Speed", "Team"];
 let titles = [], scores = [], games = [];
+let titlesFileLoaded = false;
 let currentPdfUrl = "";
 window.sddaJudgeVerification = window.sddaJudgeVerification || { elch: false, gmch: false };
 
@@ -678,17 +679,17 @@ function renderMobileDashboard() {
   }).join("");
 
   const gameChampionships = GAME_CHAMPIONSHIP_RULES.map((rule) => { const found = championshipTitle(rule.key), progress = gameChampionshipProgress(gameCounts, rule); return { rule, found, ...progress, met: progress.met || !!found }; });
-  $("mobile-game-titles").innerHTML += gameChampionships.map(({ rule, found, met, remaining, progressText }) =>
+  $("mobile-game-titles").innerHTML += gameChampionships.map(({ rule, found, met, remaining, progressText, qualifiedGames }) =>
     accordion({
       name: rule.name,
-      subtitle: found ? "Recorded by SDDA" : met ? "Current-rule pass requirements met" : String(remaining) + " more pass(es) needed",
+      subtitle: found ? "Recorded by SDDA" : met ? "Current-rule pass requirements met" : rule.type === "base" ? qualifiedGames + "/3 Games qualifying" : String(remaining) + " more qualifying passes needed",
       achieved: met,
       date: found?.date,
       body: reqList([
-        { done: met, text: rule.text },
-        { done: true, text: "GCH2 adds 4 passes, GCH3 adds 5 more, GCH4 adds 7 more, and GCH5 adds 10 more across all four Games. Passes are banked and can be reused." },
-        { done: !!found, text: found ? "Title recorded " + dateLabel(found.date) : "Official award not shown in the uploaded Titles file" },
-        { done: true, text: progressText }
+        { done: progress.met || !!found, text: rule.type === "base" ? progressText : rule.text },
+        { done: false, text: "Progression information: GCH2 adds 4 passes, GCH3 adds 5 more, GCH4 adds 7 more, and GCH5 adds 10 more across all four Games. Games passes are banked and may be used toward repeat titles." },
+        { done: false, text: found ? "Title recorded by SDDA " + dateLabel(found.date) : titlesFileLoaded ? "Official award not shown in the uploaded Titles file" : "Titles file not uploaded" },
+        { done: rule.type !== "base" && (progress.met || !!found), text: rule.type === "base" ? "Initial SD-GCH requires 3 passes in each of any 3 Games." : progressText }
       ]),
       accent: "level-accent-elite"
     })
@@ -774,7 +775,7 @@ const targets = [];
     const progress = gameChampionshipProgress(gameCounts, rule);
     addTarget(rule.name, "Games", [
       { done: progress.baseMet, text: `${progress.qualifiedGames}/3 Games have at least 3 passes (${progress.trio.join(", ")})` },
-      { done: progress.met, text: rule.type === "base" ? `${progress.topThreeTotal} total passes across the qualifying Games` : `${progress.extras}/${rule.target} additional passes ${rule.type === "four" ? "across all four Games" : "across the top three Games"}` }
+      { done: progress.met, text: rule.type === "base" ? `${progress.topThreeTotal} total passes across the selected three Games` : `${progress.extras}/${rule.target} additional passes ${rule.type === "four" ? "across all four Games" : "across the top three Games"}` }
     ], remaining);
   });
   targets.sort((a, b) => a.needed - b.needed || a.name.localeCompare(b.name));
@@ -783,6 +784,7 @@ const targets = [];
 
 async function loadTitles(file) {
   const parsed = await parseAccountFile(file, (headers) => headers.some((header) => /^description$/i.test(header)) && headers.some((header) => /title score/i.test(header)) && headers.some((header) => /title date/i.test(header)), "Dog Titles");
+  titlesFileLoaded = true;
   titles = parsed.data.map((row) => ({ description: String(row.Description || "").trim(), honours: String(row.Honours || "").trim(), score: String(row["Title Score"] || "").trim() === "" ? null : Number(row["Title Score"]), date: workbookDate(row["Title Date"]) })).filter((title) => title.description);
   $("titles-name").textContent = `${file.name} · ${titles.length} titles${parsed.sheetName === "CSV" ? "" : ` · ${parsed.sheetName}`}`; render();
 }
