@@ -666,8 +666,10 @@ function renderMobileDashboard() {
   $("mobile-game-runs").innerHTML = "";
 
 const targets = [];
-  const addTarget = (name, kind, items) => {
-    const needed = items.filter((item) => !item.done).length;
+  const addTarget = (name, kind, items, neededOverride) => {
+    // Count additional scores/passes, not unfinished requirement lines.
+    // Overlapping requirements (such as Gold within the total) use the largest deficit.
+    const needed = Number.isFinite(neededOverride) ? Math.max(0, Math.ceil(neededOverride)) : items.filter((item) => !item.done).length;
     if (needed > 0) targets.push({ name, kind, needed, items });
   };
   for (const level of ["Started", "Advanced", "Excellent"]) {
@@ -690,19 +692,19 @@ const targets = [];
   if (!championshipTitle("ch") && chNeeded > 0) addTarget("SD-CH", "Scent", [
     { done: total >= 5, text: `${total}/5 Advanced or Excellent titling scores` },
     { done: excellent.length >= 2, text: `${excellent.length}/2 Excellent combinations` }
-  ]);
+  ], chNeeded);
   const machNeeded = Math.max(Math.max(0, 10 - total), Math.max(0, 3 - excellent.length), Math.max(0, 3 - gold));
   if (!championshipTitle("mach") && machNeeded > 0) addTarget("SD-MACH", "Scent", [
     { done: total >= 10, text: `${total}/10 Advanced or Excellent titling scores` },
     { done: excellent.length >= 3, text: `${excellent.length}/3 Excellent combinations` },
     { done: gold >= 3, text: `${gold}/3 Gold scores` }
-  ]);
+  ], machNeeded);
   const elchNeeded = Math.max(Math.max(0, 5 - elite.length), Math.max(0, 2 - elite.filter((set) => set.gold).length), window.sddaJudgeVerification.elch ? 0 : 1);
   if (!championshipTitle("elch")) addTarget("SD-ELCH", "Scent", [
     { done: elite.length >= 5, text: `${elite.length}/5 Elite scores` },
     { done: elite.filter((set) => set.gold).length >= 2, text: `${elite.filter((set) => set.gold).length}/2 Elite Gold scores` },
     { done: !!window.sddaJudgeVerification.elch, pending: !!window.sddaJudgeVerification.elch, text: window.sddaJudgeVerification.elch ? "Handler confirms at least 2 different judges · SDDA confirmation pending" : "Handler confirmation needed: at least 2 different judges for qualifying Elite scores" }
-  ]);
+  ], elchNeeded);
   if (!championshipTitle("gmch")) addTarget("SD-GMCH", "Scent", [
     { done: !!championshipTitle("mach") || machScoresMet, text: championshipTitle("mach") ? "SD-MACH recorded" : machScoresMet ? "SD-MACH score requirements met" : "SD-MACH required" },
     { done: !!championshipTitle("elch") || elchScoresMet, pending: !championshipTitle("elch") && elchScoresMet, text: championshipTitle("elch") ? "SD-ELCH recorded by SDDA" : elchScoresMet ? "SD-ELCH score requirements met · judge minimum awaiting SDDA confirmation" : "SD-ELCH required" },
@@ -718,7 +720,8 @@ const targets = [];
       { done: progress.excellent >= rule.excellent, text: `${progress.excellent}/${rule.excellent} additional Excellent combinations` },
       { done: progress.gold >= rule.gold, text: `${progress.gold}/${rule.gold} additional Excellent Gold combinations` },
       ...(rule.maxAdvanced ? [{ done: progress.verified, text: `${countedAdvanced} of up to ${rule.maxAdvanced} Advanced combinations may be included (optional)` }] : [])
-    ] : [{ done: false, text: "Previous title trial cutoff and complete trial numbers required; only later scores may count." }]);
+    ] : [{ done: false, text: "Previous title trial cutoff and complete trial numbers required; only later scores may count." }],
+    progress.verified ? Math.max(Math.max(0, rule.excellent - progress.excellent), Math.max(0, rule.gold - progress.gold)) : 1);
   });
   repeatEliteRules.forEach((rule) => {
     if (championshipTitle(rule.key)) return;
@@ -729,7 +732,7 @@ const targets = [];
       { done: !!previous, text: `${rule.previous.toUpperCase()} recorded` },
       { done: !!eligible && sets.length >= 5, text: eligible ? `${sets.length}/5 new Elite scores` : "Previous-title date and complete score dates required" },
       { done: !!eligible && eliteGold >= rule.gold, text: `${eliteGold}/${rule.gold} new Elite Gold scores` }
-    ]);
+    ], eligible ? Math.max(Math.max(0, 5 - sets.length), Math.max(0, rule.gold - eliteGold)) : 1);
   });
   gameTargets.forEach((target) => {
     if (target.needed <= 0) return;
@@ -743,7 +746,7 @@ const targets = [];
     addTarget(rule.name, "Games", [
       { done: progress.baseMet, text: "At least 3 passes in each of 3 different Games" },
       { done: measuredTotal >= rule.target, text: `${measuredTotal}/${rule.target} cumulative passes ${rule.type === "all-four" ? "across all four Games" : "across the top three Games"}` }
-    ]);
+    ], remaining);
   });
   targets.sort((a, b) => a.needed - b.needed || a.name.localeCompare(b.name));
   $("mobile-next-list").innerHTML = targets.map((target) => `<article class="next-card"><header><div><h3>${esc(target.name)}</h3><p class="next-kind">${esc(target.kind)}</p></div><span class="remaining-badge">${target.needed} needed</span></header><ul class="requirement-list">${target.items.map((item) => `<li class="${item.pending ? "pending" : item.done ? "done" : ""}">${item.pending ? "✓ " : item.done ? "✓ " : ""}${esc(item.text)}</li>`).join("")}</ul>${target.items.some((item) => item.pending) ? `<p class="verification-legend" style="color:#b42318;font-size:.88em">Red ✓ = handler-reported judge minimum; awaiting SDDA confirmation.</p>` : ""}</article>`).join("") || `<article class="next-card"><h3>Everything shown is complete</h3><p>Check with SDDA for the next eligible extension.</p></article>`;
