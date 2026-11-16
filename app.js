@@ -649,10 +649,10 @@ function renderMobileDashboard() {
   }).join("");
 
   const gameChampionships = GAME_CHAMPIONSHIP_RULES.map((rule) => { const found = championshipTitle(rule.key), progress = gameChampionshipProgress(gameCounts, rule); return { rule, found, ...progress, met: progress.met || !!found }; });
-  $("mobile-game-titles").innerHTML += gameChampionships.map(({ rule, found, met, remaining, progressText }) =>
+  $("mobile-game-titles").innerHTML += gameChampionships.map(({ rule, found, met, remaining, progressText, qualifiedGames }) =>
     accordion({
       name: rule.name,
-      subtitle: found ? "Recorded by SDDA" : met ? "Current-rule pass requirements met" : String(remaining) + " more pass(es) needed",
+      subtitle: found ? "Recorded by SDDA" : met ? "Current-rule pass requirements met" : rule.type === "base" ? qualifiedGames + "/3 Games qualifying" : String(remaining) + " more pass(es) needed",
       achieved: met,
       date: found?.date,
       body: reqList([
