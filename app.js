@@ -4,6 +4,7 @@ const COMPONENTS = ["Container", "Exterior", "Interior"];
 const LEVELS = ["Started", "Advanced", "Excellent", "Elite"];
 const GAME_NAMES = ["Aerial", "Distance", "Speed", "Team"];
 let titles = [], scores = [], games = [];
+let titlesFileLoaded = false;
 let currentPdfUrl = "";
 window.sddaJudgeVerification = window.sddaJudgeVerification || { elch: false, gmch: false };
 
@@ -98,7 +99,37 @@ function byLevel(level, list = scores) { return list.filter((score) => score.lev
 function componentCounts(level, list = scores) { return Object.fromEntries(COMPONENTS.map((component) => [component, list.filter((score) => score.level === level && score.component === component).length])); }
 function gamePassCounts(){return Object.fromEntries(GAME_NAMES.map(g=>[g,Math.max(games.filter(r=>r.game===g&&r.pass!==false).length,gamesTitleRecorded(g)?3:0)]));}
 const GAME_CHAMPIONSHIP_RULES=[{key:"gch",name:"SD-GCH",type:"base",target:0,text:"3 passes in each of any 3 Games"},{key:"gch2",name:"SD-GCH2",type:"three",target:4,text:"4 additional passes across any 3 Games (13 cumulative)"},{key:"gch3",name:"SD-GCH3",type:"three",target:9,text:"5 additional passes after GCH2 (18 cumulative)"},{key:"gch4",name:"SD-GCH4",type:"three",target:16,text:"7 additional passes after GCH3 (25 cumulative)"},{key:"gch5",name:"SD-GCH5",type:"four",target:26,text:"10 additional passes after GCH4 across all 4 Games (35 cumulative)"}];
-function gameChampionshipProgress(counts,rule){let best=null;for(let a=0;a<4;a++)for(let b=a+1;b<4;b++)for(let c=b+1;c<4;c++){const trio=[GAME_NAMES[a],GAME_NAMES[b],GAME_NAMES[c]],fourth=GAME_NAMES.find(g=>!trio.includes(g)),baseMissing=trio.reduce((s,g)=>s+Math.max(0,3-counts[g]),0),extras3=trio.reduce((s,g)=>s+Math.max(0,counts[g]-3),0),extras=rule.type==="four"?extras3+counts[fourth]:extras3,missingAdditionalGames=rule.type==="four"?GAME_NAMES.filter(g=>counts[g]<=0).length:0,remaining=baseMissing+Math.max(Math.max(0,rule.target-extras),missingAdditionalGames),met=baseMissing===0&&extras>=rule.target&&missingAdditionalGames===0;if(!best||remaining<best.remaining||(remaining===best.remaining&&extras>best.extras))best={met,remaining,extras,baseMissing,trio,fourth};}return {...best,progressText:rule.type==="base"?"3 passes each in "+best.trio.join(", "):best.extras+"/"+rule.target+" additional passes in "+best.trio.join(", ")+(rule.type==="four"?" + "+best.fourth:"")};}
+function gameChampionshipProgress(counts, rule) {
+  let best = null;
+  for (let a = 0; a < 4; a++) for (let b = a + 1; b < 4; b++) for (let c = b + 1; c < 4; c++) {
+    const trio = [GAME_NAMES[a], GAME_NAMES[b], GAME_NAMES[c]];
+    const fourth = GAME_NAMES.find((game) => !trio.includes(game));
+    const qualifiedGames = trio.filter((game) => counts[game] >= 3).length;
+    const baseMissing = trio.reduce((sum, game) => sum + Math.max(0, 3 - counts[game]), 0);
+    const extras3 = trio.reduce((sum, game) => sum + Math.max(0, counts[game] - 3), 0);
+    const extras = rule.type === "four" ? extras3 + counts[fourth] : extras3;
+    const missingAdditionalGames = rule.type === "four" ? GAME_NAMES.filter((game) => counts[game] <= 0).length : 0;
+    const topThreeTotal = trio.reduce((sum, game) => sum + counts[game], 0);
+    const allFourTotal = GAME_NAMES.reduce((sum, game) => sum + counts[game], 0);
+    const baseMet = qualifiedGames === 3;
+    const remaining = rule.type === "base"
+      ? baseMissing
+      : baseMissing + Math.max(Math.max(0, rule.target - extras), missingAdditionalGames);
+    const met = rule.type === "base"
+      ? baseMet
+      : baseMet && extras >= rule.target && missingAdditionalGames === 0;
+    const candidate = { met, remaining, extras, baseMissing, baseMet, qualifiedGames, trio, fourth, topThreeTotal, allFourTotal };
+    if (!best || candidate.remaining < best.remaining ||
+      (candidate.remaining === best.remaining && candidate.qualifiedGames > best.qualifiedGames) ||
+      (candidate.remaining === best.remaining && candidate.qualifiedGames === best.qualifiedGames && candidate.extras > best.extras)) {
+      best = candidate;
+    }
+  }
+  const progressText = rule.type === "base"
+    ? `${best.qualifiedGames}/3 Games have at least 3 passes (${best.trio.join(", ")}) · ${best.topThreeTotal} total passes across those Games`
+    : `${best.qualifiedGames}/3 Games meet the initial 3-pass minimum · ${best.extras}/${rule.target} additional passes in ${best.trio.join(", ")}${rule.type === "four" ? " + " + best.fourth : ""}`;
+  return { ...best, progressText };
+}
 
 
 function validComponentScore(level, component, value) {
@@ -648,17 +679,17 @@ function renderMobileDashboard() {
   }).join("");
 
   const gameChampionships = GAME_CHAMPIONSHIP_RULES.map((rule) => { const found = championshipTitle(rule.key), progress = gameChampionshipProgress(gameCounts, rule); return { rule, found, ...progress, met: progress.met || !!found }; });
-  $("mobile-game-titles").innerHTML += gameChampionships.map(({ rule, found, met, remaining, progressText }) =>
+  $("mobile-game-titles").innerHTML += gameChampionships.map(({ rule, found, met, remaining, progressText, qualifiedGames }) =>
     accordion({
       name: rule.name,
-      subtitle: found ? "Recorded by SDDA" : met ? "Current-rule pass requirements met" : String(remaining) + " more pass(es) needed",
+      subtitle: found ? "Recorded by SDDA" : met ? "Current-rule pass requirements met" : rule.type === "base" ? qualifiedGames + "/3 Games qualifying" : String(remaining) + " more qualifying passes needed",
       achieved: met,
       date: found?.date,
       body: reqList([
-        { done: met, text: rule.text },
-        { done: true, text: "GCH2 adds 4 passes, GCH3 adds 5 more, GCH4 adds 7 more, and GCH5 adds 10 more across all four Games. Passes are banked and can be reused." },
-        { done: !!found, text: found ? "Title recorded " + dateLabel(found.date) : "Official award not shown in the uploaded Titles file" },
-        { done: true, text: progressText }
+        { done: progress.met || !!found, text: rule.type === "base" ? progressText : rule.text },
+        { done: false, text: "Progression information: GCH2 adds 4 passes, GCH3 adds 5 more, GCH4 adds 7 more, and GCH5 adds 10 more across all four Games. Games passes are banked and may be used toward repeat titles." },
+        { done: false, text: found ? "Title recorded by SDDA " + dateLabel(found.date) : titlesFileLoaded ? "Official award not shown in the uploaded Titles file" : "Titles file not uploaded" },
+        { done: rule.type !== "base" && (progress.met || !!found), text: rule.type === "base" ? "Initial SD-GCH requires 3 passes in each of any 3 Games." : progressText }
       ]),
       accent: "level-accent-elite"
     })
@@ -666,8 +697,10 @@ function renderMobileDashboard() {
   $("mobile-game-runs").innerHTML = "";
 
 const targets = [];
-  const addTarget = (name, kind, items) => {
-    const needed = items.filter((item) => !item.done).length;
+  const addTarget = (name, kind, items, neededOverride) => {
+    // Count additional scores/passes, not unfinished requirement lines.
+    // Overlapping requirements (such as Gold within the total) use the largest deficit.
+    const needed = Number.isFinite(neededOverride) ? Math.max(0, Math.ceil(neededOverride)) : items.filter((item) => !item.done).length;
     if (needed > 0) targets.push({ name, kind, needed, items });
   };
   for (const level of ["Started", "Advanced", "Excellent"]) {
@@ -690,19 +723,19 @@ const targets = [];
   if (!championshipTitle("ch") && chNeeded > 0) addTarget("SD-CH", "Scent", [
     { done: total >= 5, text: `${total}/5 Advanced or Excellent titling scores` },
     { done: excellent.length >= 2, text: `${excellent.length}/2 Excellent combinations` }
-  ]);
+  ], chNeeded);
   const machNeeded = Math.max(Math.max(0, 10 - total), Math.max(0, 3 - excellent.length), Math.max(0, 3 - gold));
   if (!championshipTitle("mach") && machNeeded > 0) addTarget("SD-MACH", "Scent", [
     { done: total >= 10, text: `${total}/10 Advanced or Excellent titling scores` },
     { done: excellent.length >= 3, text: `${excellent.length}/3 Excellent combinations` },
     { done: gold >= 3, text: `${gold}/3 Gold scores` }
-  ]);
+  ], machNeeded);
   const elchNeeded = Math.max(Math.max(0, 5 - elite.length), Math.max(0, 2 - elite.filter((set) => set.gold).length), window.sddaJudgeVerification.elch ? 0 : 1);
   if (!championshipTitle("elch")) addTarget("SD-ELCH", "Scent", [
     { done: elite.length >= 5, text: `${elite.length}/5 Elite scores` },
     { done: elite.filter((set) => set.gold).length >= 2, text: `${elite.filter((set) => set.gold).length}/2 Elite Gold scores` },
     { done: !!window.sddaJudgeVerification.elch, pending: !!window.sddaJudgeVerification.elch, text: window.sddaJudgeVerification.elch ? "Handler confirms at least 2 different judges · SDDA confirmation pending" : "Handler confirmation needed: at least 2 different judges for qualifying Elite scores" }
-  ]);
+  ], elchNeeded);
   if (!championshipTitle("gmch")) addTarget("SD-GMCH", "Scent", [
     { done: !!championshipTitle("mach") || machScoresMet, text: championshipTitle("mach") ? "SD-MACH recorded" : machScoresMet ? "SD-MACH score requirements met" : "SD-MACH required" },
     { done: !!championshipTitle("elch") || elchScoresMet, pending: !championshipTitle("elch") && elchScoresMet, text: championshipTitle("elch") ? "SD-ELCH recorded by SDDA" : elchScoresMet ? "SD-ELCH score requirements met · judge minimum awaiting SDDA confirmation" : "SD-ELCH required" },
@@ -718,7 +751,8 @@ const targets = [];
       { done: progress.excellent >= rule.excellent, text: `${progress.excellent}/${rule.excellent} additional Excellent combinations` },
       { done: progress.gold >= rule.gold, text: `${progress.gold}/${rule.gold} additional Excellent Gold combinations` },
       ...(rule.maxAdvanced ? [{ done: progress.verified, text: `${countedAdvanced} of up to ${rule.maxAdvanced} Advanced combinations may be included (optional)` }] : [])
-    ] : [{ done: false, text: "Previous title trial cutoff and complete trial numbers required; only later scores may count." }]);
+    ] : [{ done: false, text: "Previous title trial cutoff and complete trial numbers required; only later scores may count." }],
+    progress.verified ? Math.max(Math.max(0, rule.excellent - progress.excellent), Math.max(0, rule.gold - progress.gold)) : 1);
   });
   repeatEliteRules.forEach((rule) => {
     if (championshipTitle(rule.key)) return;
@@ -729,21 +763,20 @@ const targets = [];
       { done: !!previous, text: `${rule.previous.toUpperCase()} recorded` },
       { done: !!eligible && sets.length >= 5, text: eligible ? `${sets.length}/5 new Elite scores` : "Previous-title date and complete score dates required" },
       { done: !!eligible && eliteGold >= rule.gold, text: `${eliteGold}/${rule.gold} new Elite Gold scores` }
-    ]);
+    ], eligible ? Math.max(Math.max(0, 5 - sets.length), Math.max(0, rule.gold - eliteGold)) : 1);
   });
   gameTargets.forEach((target) => {
     if (target.needed <= 0) return;
     const game = target.name.split(" (")[0], count = gameCounts[game];
-    addTarget(target.name, "Games", [{ done: count >= 3, text: `${count}/3 passes required for the individual title` }]);
+    addTarget(target.name, "Games", [{ done: count >= 3, text: `${count}/3 passes required for the individual title` }], target.needed);
   });
   gameChampionships.forEach(({ rule, met, remaining }) => {
     if (met) return;
     const progress = gameChampionshipProgress(gameCounts, rule);
-    const measuredTotal = rule.type === "all-four" ? progress.allFourTotal : progress.topThreeTotal;
     addTarget(rule.name, "Games", [
-      { done: progress.baseMet, text: "At least 3 passes in each of 3 different Games" },
-      { done: measuredTotal >= rule.target, text: `${measuredTotal}/${rule.target} cumulative passes ${rule.type === "all-four" ? "across all four Games" : "across the top three Games"}` }
-    ]);
+      { done: progress.baseMet, text: `${progress.qualifiedGames}/3 Games have at least 3 passes (${progress.trio.join(", ")})` },
+      { done: progress.met, text: rule.type === "base" ? `${progress.topThreeTotal} total passes across the selected three Games` : `${progress.extras}/${rule.target} additional passes ${rule.type === "four" ? "across all four Games" : "across the top three Games"}` }
+    ], remaining);
   });
   targets.sort((a, b) => a.needed - b.needed || a.name.localeCompare(b.name));
   $("mobile-next-list").innerHTML = targets.map((target) => `<article class="next-card"><header><div><h3>${esc(target.name)}</h3><p class="next-kind">${esc(target.kind)}</p></div><span class="remaining-badge">${target.needed} needed</span></header><ul class="requirement-list">${target.items.map((item) => `<li class="${item.pending ? "pending" : item.done ? "done" : ""}">${item.pending ? "✓ " : item.done ? "✓ " : ""}${esc(item.text)}</li>`).join("")}</ul>${target.items.some((item) => item.pending) ? `<p class="verification-legend" style="color:#b42318;font-size:.88em">Red ✓ = handler-reported judge minimum; awaiting SDDA confirmation.</p>` : ""}</article>`).join("") || `<article class="next-card"><h3>Everything shown is complete</h3><p>Check with SDDA for the next eligible extension.</p></article>`;
@@ -751,6 +784,7 @@ const targets = [];
 
 async function loadTitles(file) {
   const parsed = await parseAccountFile(file, (headers) => headers.some((header) => /^description$/i.test(header)) && headers.some((header) => /title score/i.test(header)) && headers.some((header) => /title date/i.test(header)), "Dog Titles");
+  titlesFileLoaded = true;
   titles = parsed.data.map((row) => ({ description: String(row.Description || "").trim(), honours: String(row.Honours || "").trim(), score: String(row["Title Score"] || "").trim() === "" ? null : Number(row["Title Score"]), date: workbookDate(row["Title Date"]) })).filter((title) => title.description);
   $("titles-name").textContent = `${file.name} · ${titles.length} titles${parsed.sheetName === "CSV" ? "" : ` · ${parsed.sheetName}`}`; render();
 }
