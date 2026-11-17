@@ -57,11 +57,11 @@
     .sdda-working-card{width:min(520px,94vw);padding:28px 24px 24px;border:1px solid #d9e3dc;border-radius:20px;background:#fffdf8;box-shadow:0 22px 70px rgba(0,0,0,.28);text-align:center}
     .sdda-working-card h2{margin:12px 0 6px;color:#244b38;font-size:clamp(20px,4vw,27px)}
     .sdda-working-card p{margin:0;color:#615e56;font-size:14px;line-height:1.5}
-    .sdda-dog-track{position:relative;height:88px;margin:8px 0 10px;overflow:hidden;border-bottom:2px dashed #d8cbb3}
+    .sdda-dog-track{position:relative;height:88px;margin:8px 0 10px;overflow:hidden;border-bottom:2px dashed #d8cbb3;container-type:inline-size}
     .sdda-sniffing-dog{position:absolute;left:0;bottom:4px;font-size:54px;line-height:1;filter:drop-shadow(0 3px 1px rgba(0,0,0,.12));will-change:transform;animation:sdda-dog-trot 4.6s ease-in-out infinite}
     .sdda-paw-trail{position:absolute;left:8%;bottom:10px;color:#b7a58a;font-size:19px;letter-spacing:12px;white-space:nowrap;animation:sdda-paw-fade 1.8s linear infinite}
     .sdda-working-spinner{width:23px;height:23px;margin:18px auto 0;border:3px solid #dce6df;border-top-color:#315b49;border-radius:50%;animation:sdda-spin .8s linear infinite}
-    @keyframes sdda-dog-trot{0%{transform:translateX(-5px) translateY(0) scaleX(1)}22%{transform:translateX(95px) translateY(-5px) scaleX(1)}48%{transform:translateX(205px) translateY(0) scaleX(1)}50%{transform:translateX(205px) translateY(0) scaleX(-1)}76%{transform:translateX(95px) translateY(-5px) scaleX(-1)}100%{transform:translateX(-5px) translateY(0) scaleX(-1)}}
+    @keyframes sdda-dog-trot{0%{transform:translateX(0) translateY(0) scaleX(1)}22%{transform:translateX(calc(50cqw - 29px)) translateY(-5px) scaleX(1)}48%{transform:translateX(calc(100cqw - 58px)) translateY(0) scaleX(1)}50%{transform:translateX(calc(100cqw - 58px)) translateY(0) scaleX(-1)}76%{transform:translateX(calc(50cqw - 29px)) translateY(-5px) scaleX(-1)}100%{transform:translateX(0) translateY(0) scaleX(-1)}}
     @keyframes sdda-paw-fade{0%{transform:translateX(0);opacity:.1}35%{opacity:.8}100%{transform:translateX(45px);opacity:.1}}
     @keyframes sdda-spin{to{transform:rotate(360deg)}}
     @media(prefers-reduced-motion:reduce){.sdda-sniffing-dog,.sdda-paw-trail,.sdda-working-spinner{animation-duration:8s}}
