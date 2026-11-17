@@ -396,7 +396,7 @@ function maximizeGoldCombinations(level, list = scores, maximum = Infinity) {
       if (exhausted || (best.gold === upperBound && best.total === 192 * best.gold)) break;
     }
 
-    if (!exhausted && best.gold < upperBound) {
+    if (!exhausted && !(best.gold === upperBound && best.total === 192 * best.gold)) {
       const skipped = solve(index + 1, usedI, usedE);
       if (better(skipped, best)) best = skipped;
     }
