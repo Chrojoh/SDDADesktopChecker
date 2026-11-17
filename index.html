@@ -10,6 +10,63 @@
   <link rel="stylesheet" href="desktop-ledger.css?v=20261027-1">
 </head>
 <body class="desktop-ledger">
+<div id="ledger-loading" class="ledger-loading" role="status" aria-live="polite" aria-label="Calculating score combinations" hidden>
+  <div class="ledger-loading-card">
+    <svg class="ledger-flipbook" viewBox="0 0 220 150" role="img" aria-label="A hand-drawn dog sniffing as its legs move">
+      <g class="flip-frame frame-one" fill="#fff" stroke="#171717" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M45 65 Q66 43 111 53 Q133 56 145 76 L132 91 Q100 99 65 87 Z"/>
+        <path d="M139 72 Q153 77 158 92 L150 105 Q139 101 134 91 Z"/>
+        <path d="M151 96 Q164 101 176 99 L182 104 Q169 112 150 107"/>
+        <path d="M54 78 L48 111 Q48 119 59 119 L65 115 L63 84"/>
+        <path d="M91 87 L90 115 Q90 123 102 121 L106 117 L105 88"/>
+        <path d="M125 84 L128 111 Q130 120 141 116 L144 111 L138 82"/>
+        <path d="M48 62 Q30 47 35 31 Q48 35 56 56"/>
+        <path d="M143 76 Q159 72 162 57 Q147 58 139 68"/>
+        <path d="M49 62 Q39 48 27 52"/>
+        <path d="M46 59 Q31 57 24 66"/>
+        <path d="M27 66 Q18 72 25 79 Q33 81 37 70"/>
+        <circle cx="174" cy="101" r="3" fill="#171717"/>
+        <path d="M65 57 Q82 48 104 55" fill="none"/>
+      </g>
+      <g class="flip-frame frame-two" fill="#fff" stroke="#171717" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M45 65 Q66 43 111 53 Q133 56 145 76 L132 91 Q100 99 65 87 Z"/>
+        <path d="M139 72 Q153 77 158 92 L150 105 Q139 101 134 91 Z"/>
+        <path d="M151 96 Q164 101 176 99 L182 104 Q169 112 150 107"/>
+        <path d="M54 78 L62 107 Q65 117 75 113 L78 107 L63 81"/>
+        <path d="M91 87 L83 112 Q80 121 93 122 L99 118 L105 88"/>
+        <path d="M125 84 L136 107 Q141 115 150 108 L150 102 L138 82"/>
+        <path d="M48 62 Q30 47 35 31 Q48 35 56 56"/>
+        <path d="M143 76 Q159 72 162 57 Q147 58 139 68"/>
+        <path d="M49 62 Q39 48 27 52"/>
+        <path d="M46 59 Q31 57 24 66"/>
+        <path d="M27 66 Q18 72 25 79 Q33 81 37 70"/>
+        <circle cx="174" cy="101" r="3" fill="#171717"/>
+        <path d="M65 57 Q82 48 104 55" fill="none"/>
+      </g>
+      <g class="flip-frame frame-three" fill="#fff" stroke="#171717" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M45 65 Q66 43 111 53 Q133 56 145 76 L132 91 Q100 99 65 87 Z"/>
+        <path d="M139 72 Q153 77 158 92 L150 105 Q139 101 134 91 Z"/>
+        <path d="M151 96 Q164 101 176 99 L182 104 Q169 112 150 107"/>
+        <path d="M54 78 L43 105 Q39 115 50 119 L57 115 L65 84"/>
+        <path d="M91 87 L98 113 Q102 121 113 115 L115 109 L105 88"/>
+        <path d="M125 84 L119 111 Q118 121 130 121 L136 116 L138 82"/>
+        <path d="M48 62 Q30 47 35 31 Q48 35 56 56"/>
+        <path d="M143 76 Q159 72 162 57 Q147 58 139 68"/>
+        <path d="M49 62 Q39 48 27 52"/>
+        <path d="M46 59 Q31 57 24 66"/>
+        <path d="M27 66 Q18 72 25 79 Q33 81 37 70"/>
+        <circle cx="174" cy="101" r="3" fill="#171717"/>
+        <path d="M65 57 Q82 48 104 55" fill="none"/>
+      </g>
+      <g class="paw-trails" fill="none" stroke="#171717" stroke-width="2.2" stroke-linecap="round">
+        <path d="M28 130 q-4 -6 1 -9 q5 -2 7 4 q2 7 -4 8 q-3 0 -4 -3 M24 117 l-3 -4 M31 115 l0 -5 M38 119 l3 -4"/>
+        <path d="M83 133 q-4 -6 1 -9 q5 -2 7 4 q2 7 -4 8 q-3 0 -4 -3 M79 120 l-3 -4 M86 118 l0 -5 M93 122 l3 -4"/>
+      </g>
+    </svg>
+    <div class="ledger-loading-label">Finding the best Gold combinations…</div>
+    <div class="ledger-loading-subtitle">Checking every score record without reusing a run</div>
+  </div>
+</div>
   <header class="desktop-hero">
     <div class="desktop-shell hero-row">
       <div><p class="desktop-kicker">Sporting Detection Dogs Association</p><h1>SDDA Achievement Ledger</h1><button id="install-app" class="install-app" type="button" hidden>Install app</button><p>Review Scent and Games achievements, calculated combinations, and the shortest path to the next title.</p></div>
