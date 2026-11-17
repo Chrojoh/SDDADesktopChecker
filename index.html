@@ -150,7 +150,7 @@ async function loadSelected(){
  if(sn)sn.textContent="Loaded saved dog scores · "+scores.length+" scored components · "+games.length+" Games passes";
  if(tn)tn.textContent="Loaded saved dog titles · "+titles.length+" recorded titles";
  if(button){button.disabled=true;button.textContent="Sniffing…";}
- if(msg){msg.classList.add("gold-search-loading");msg.textContent="🐾 Sniffing out Gold score combinations for "+(p.dog||("SDDA dog #"+p.dogNumber))+"…";}
+ if(msg){msg.classList.add("gold-search-loading");msg.textContent="🐾 Sniffing out all Gold score combinations for "+(p.dog||("SDDA dog #"+p.dogNumber))+"…";}
  await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
  try{
   if(typeof render==="function")render();
