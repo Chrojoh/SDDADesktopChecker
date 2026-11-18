@@ -67,6 +67,17 @@ body,.mobile-ledger,.desktop-ledger{background:#f1f0eb!important;color:#202a25}
 .progression-history{min-width:0;padding:10px;background:#fff;border:1px solid var(--line,#d5d8d2)}
 .progression-history>h4{margin:0 0 8px;font-size:14px}
 .progression-history .history-component-columns{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}
+.elite-history-grid{display:grid;gap:4px;min-width:0}
+.elite-history-header,.elite-history-row{display:grid;grid-template-columns:minmax(48px,.65fr) repeat(3,minmax(0,1fr));gap:4px;align-items:stretch}
+.elite-history-header{font-size:10px;color:var(--muted);text-align:center;padding:3px 2px}
+.elite-history-header b:first-child{text-align:left}
+.elite-history-trial,.elite-history-cell{display:flex;align-items:center;justify-content:center;min-width:0;padding:4px 2px;border-bottom:1px solid var(--line,#ddd);font-size:10px}
+.elite-history-trial{justify-content:flex-start;white-space:nowrap}
+.elite-history-cell{flex-direction:column;gap:2px}
+.elite-history-cell .history-score{width:100%;justify-content:center}
+.elite-history-empty{display:block;min-height:18px;width:100%}
+.elite-history-cutoff{grid-column:1/-1}
+
 .progression-history .history-component{min-width:0;padding:5px}
 .progression-history .history-component h4{font-size:11px;overflow-wrap:anywhere}
 .progression-history .history-score{font-size:11px;gap:2px;flex-wrap:wrap;padding:4px 2px}
