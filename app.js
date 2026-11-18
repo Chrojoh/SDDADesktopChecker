@@ -983,7 +983,7 @@ function progressionHistoryMarkup(level) {
         }).join("");
         const cutoff = cutoffs.has(String(group.trial))
           ? '<div class="history-cutoff elite-history-cutoff"><b>' + esc(cutoffs.get(String(group.trial))) +
-            '</b><small>Trial ' + esc(group.trial) + ' · ' + esc(dateLabel(cutoffDates.get(String(group.trial)))) + ' · scores through this title date/trial are not carried forward</small></div>'
+            '</b><small>Trial ' + esc(group.trial) + (cutoffDates.has(String(group.trial)) ? ' · ' + esc(dateLabel(cutoffDates.get(String(group.trial)))) : '') + ' · scores through this title date/trial are not carried forward</small></div>'
           : "";
         return '<div class="elite-history-row"><b class="elite-history-trial">Trial ' + esc(group.trial || "—") +
           '</b>' + cells + cutoff + '</div>';
