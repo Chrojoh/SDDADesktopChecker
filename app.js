@@ -1359,7 +1359,6 @@ function renderMobileDashboard() {
   $("mobile-game-titles").innerHTML = GAME_NAMES.map((game) => {
     const historical = gameTitleRecord(game);
     const met = gameCounts[game] >= 3;
-    gameTargets.push({ name: `${game} (SD-G${game[0]})`, kind: "Games", needed: Math.max(0, 3 - gameCounts[game]), items: [`${gameCounts[game]}/3 current-rule passes`] });
     const details = [{ done: met, text: `${gameCounts[game]}/3 passes required for the individual title` }];
     if (historical) details.push({ done: false, text: `Historical Titles-file entry dated ${dateLabel(historical.date)}; not used in the current-rule calculation` });
     return accordion({ name: `${game} · SD-G${game[0]}`, subtitle: met ? "Current-rule pass requirement met" : `${gameCounts[game]}/3 passes`, achieved: met, body: reqList(details) });
