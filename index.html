@@ -187,7 +187,7 @@ async function restoreBackup(file){
 }
 
 const originalLoadScores=loadScores,originalLoadTitles=loadTitles;
-loadScores=async function(file){const previousId=scores.length?dogId():null;await originalLoadScores(file);const nextId=scores.length?dogId():null;if(previousId&&nextId&&previousId!==nextId){titles=[];titlesFileLoaded=false;const t=document.getElementById("titles-name");if(t)t.textContent="Choose the Titles file for this dog, if available.";render();}await saveCurrent();};
+loadScores=async function(file){const previousId=scores.length?dogId():null;await originalLoadScores(file);const nextId=scores.length?dogId():null;if(previousId&&nextId&&previousId!==nextId){titles=[];titlesFileLoaded=false;const t=document.getElementById("titles-name");if(t)t.textContent="Choose the required Titles file for this dog.";render();}await saveCurrent();};
 loadTitles=async function(file){await originalLoadTitles(file);await saveCurrent();};
 document.addEventListener("DOMContentLoaded",()=>{});
 const select=document.getElementById("sdda-saved-dogs");
