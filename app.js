@@ -765,8 +765,11 @@ function historicalChProgressSelection() {
     // If the export includes the award trial in Honours, stop at that exact
     // trial. Otherwise the award date is the boundary and all same-day trials
     // are included in the historical snapshot.
-    if (honourTrial && Number(honourTrial[1]) === Number(group.trial)) return lastSelection;
-    if (lastSelection.met) return lastSelection;
+    if (honourTrial) {
+      if (Number(honourTrial[1]) === Number(group.trial)) return lastSelection;
+    } else if (lastSelection.met) {
+      return lastSelection;
+    }
   }
   return lastSelection;
 }
