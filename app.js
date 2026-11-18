@@ -647,12 +647,13 @@ function chronologicalMachStory() {
         break;
       }
     }
-    story.push({ ...stage, steps, completion, recorded: championshipTitle(stage.key) });
+    const recorded = championshipTitle(stage.key);
+    story.push({ ...stage, steps, completion, recorded });
     if (!completion) break;
     // A repeat stage may only begin after the preceding title is confirmed in
     // the uploaded Titles sheet and its recorded date agrees with the score history.
     if (!titlesFileLoaded || !recorded || !recorded.date || recorded.date !== completion.date) break;
-    const honourTrial = String(recorded.honours || "").match(/trial\\s*#?\\s*(\\d+)/i);
+    const honourTrial = String(recorded.honours || "").match(/trial\s*#?\s*(\d+)/i);
     if (honourTrial && Number(honourTrial[1]) !== Number(completion.trial)) break;
     previousCutoffIndex = completion.index;
   }
@@ -753,7 +754,7 @@ function progressionTitleComparison(calculatedDate, recorded, calculatedTrial) {
   if (!recorded) return '<p class="level-note">No matching award appears in the uploaded Dog Titles file. The score calculation is not an official SDDA award.</p>';
   if (!calculatedDate || !recorded.date) return '<p class="level-note">A calculated completion or recorded award date is missing; the two cannot be compared.</p>';
   if (calculatedDate !== recorded.date) return '<p class="level-note">Date discrepancy: the score history first meets the calculated requirements on ' + esc(dateLabel(calculatedDate)) + ', while the Titles file records ' + esc(dateLabel(recorded.date)) + '. This needs review; the checker will not force these dates to match.</p>';
-  const honourTrial = String(recorded.honours || '').match(/trial\s*#?\s*(\d+)/i);
+    const honourTrial = String(recorded.honours || "").match(/trial\s*#?\s*(\d+)/i);
   if (honourTrial && calculatedTrial && Number(honourTrial[1]) !== Number(calculatedTrial)) {
     return '<p class="level-note">Trial discrepancy: the score calculation first completes at Trial ' + esc(calculatedTrial) + ', but the Titles file honours field points to Trial ' + esc(honourTrial[1]) + '. Review the source records.</p>';
   }
