@@ -998,7 +998,8 @@ function renderProgressionScoreColumns(activeLedger = currentMachLedgerRows()) {
     {level:"Elite",sets:elite,accent:"level-accent-elite",elite:true}
   ];
   return '<p class="level-note current-cutoff-announcement">' + esc(activeLedger.message) +
-    '</p><div class="progression-score-columns">' +
+    '</p><p class="level-note sp-definition-line">SP means Special title. Title-earning components remain together as one locked combination.</p>' +
+    '<div class="progression-score-columns">' +
     cards.map((card) => {
       const count = card.elite
         ? card.sets.length + ' complete same-trial · ' + card.sets.filter((set) => set.gold).length + ' Gold'
@@ -1053,7 +1054,7 @@ function currentMachLedgerRows() {
     rows: scores.filter((score) => (Number(score.sourceRow) || 0) > lastCutoffSourceRow),
     cutoffTrial: cutoff.trial,
     lastSourceRow: lastCutoffSourceRow,
-    message: "Active combinations use score-file rows after the complete " + recordedStage.key.toUpperCase() + " cutoff trial " + cutoff.trial + ". All rows from that trial are excluded."
+    message: "Active combinations use score-file rows after the complete " + recordedStage.key.toUpperCase() + " cutoff trial " + cutoff.trial + ". All rows from that trial and before are excluded."
   };
 }
 
