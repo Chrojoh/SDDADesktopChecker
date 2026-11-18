@@ -1054,7 +1054,7 @@ function currentMachLedgerRows() {
     rows: scores.filter((score) => (Number(score.sourceRow) || 0) > lastCutoffSourceRow),
     cutoffTrial: cutoff.trial,
     lastSourceRow: lastCutoffSourceRow,
-    message: "Active combinations use score-file rows after the complete " + recordedStage.key.toUpperCase() + " cutoff trial " + cutoff.trial + ". All rows from that trial and before are excluded."
+    message: "Active combinations use score-file rows after the complete " + recordedStage.key.toUpperCase() + " trial cutoff trial " + cutoff.trial + ". All rows from that trial and before are excluded."
   };
 }
 
