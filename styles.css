@@ -251,3 +251,9 @@ body,.mobile-ledger,.desktop-ledger{background:#f1f0eb!important;color:#202a25}
  .progression-history .history-component h4{font-size:10px}
  .progression-history .history-score{font-size:10px;gap:2px;flex-wrap:wrap}
 }
+
+/* Keep the Current Scores accordion bar proportional to its text. */
+.progression-score-column.title-accordion>summary.progression-card-header{min-height:0;padding:7px 12px;}
+.progression-score-column .progression-card-header .summary-copy strong{line-height:1.2;}
+.progression-score-column .progression-card-header .summary-copy small{margin-top:1px;line-height:1.2;}
+@media(max-width:780px){.progression-score-column.title-accordion>summary.progression-card-header{min-height:0;padding:6px 9px;}}
