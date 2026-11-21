@@ -1048,12 +1048,20 @@ function progressionHistoryMarkup(level) {
     }
   } else if (level === "Elite") progressionEliteTitleCutoffs(groups).forEach((label, trial) => cutoffs.set(trial, label));
 
-  // A level may have no score in the exact trial that earned MACH. Add an
-  // empty history group at that trial's chronological position so its shared
-  // cutoff is still visible, without showing the other level's score rows.
+  // Advanced and Excellent scores become historical only once a MACH
+  // cutoff has actually been reconstructed and verified. Without a verified
+  // cutoff, every score remains current and this history panel stays empty.
+  const isMachLevel = level === "Advanced" || level === "Excellent";
+  const allMachGroups = isMachLevel ? (machTrialGroups() || []) : [];
+  if (isMachLevel && !cutoffs.size) {
+    return '<p class="run-empty">No historical ' + esc(level) +
+      ' scores yet. Scores remain current until a MACH cutoff is met and verified.</p>';
+  }
+
+  // If this level has no score in the exact MACH title trial, add an empty
+  // group at the same chronological position so its shared cutoff is visible.
   const historyGroups = [...groups];
-  if (level === "Advanced" || level === "Excellent") {
-    const allMachGroups = machTrialGroups() || [];
+  if (isMachLevel) {
     for (const trial of cutoffs.keys()) {
       if (historyGroups.some((group) => String(group.trial) === String(trial))) continue;
       const globalIndex = allMachGroups.findIndex((group) => String(group.trial) === String(trial));
@@ -1065,8 +1073,26 @@ function progressionHistoryMarkup(level) {
       if (insertAt < 0) insertAt = historyGroups.length;
       historyGroups.splice(insertAt, 0, { trial, rows: [] });
     }
+
+    // Only retain score-file rows through the latest verified MACH cutoff.
+    const latestCutoffTrial = [...cutoffs.keys()].at(-1);
+    const latestCutoffIndex = allMachGroups.findIndex((group) =>
+      String(group.trial) === String(latestCutoffTrial));
+    if (latestCutoffIndex >= 0) {
+      const cutoffRows = allMachGroups[latestCutoffIndex].rows;
+      const lastCutoffSourceRow = Math.max(0, ...cutoffRows.map((row) => Number(row.sourceRow) || 0));
+      const cutoffTrialSet = new Set(allMachGroups.slice(0, latestCutoffIndex + 1).map((group) => String(group.trial)));
+      for (let i = historyGroups.length - 1; i >= 0; i--) {
+        const group = historyGroups[i];
+        if (!cutoffTrialSet.has(String(group.trial))) {
+          historyGroups.splice(i, 1);
+          continue;
+        }
+        group.rows = group.rows.filter((row) => (Number(row.sourceRow) || 0) <= lastCutoffSourceRow);
+      }
+    }
   }
-  if (!historyGroups.length) return '<p class="run-empty">No ' + esc(level) + ' score history is available.</p>';
+    if (!historyGroups.length) return '<p class="run-empty">No ' + esc(level) + ' score history is available.</p>';
   const columns = level === "Elite"
     ? '<div class="elite-history-grid"><div class="elite-history-header"><b>Trial</b>' +
       COMPONENTS.map((component) => '<b>' + esc(component) + '</b>').join("") + '</div>' +
