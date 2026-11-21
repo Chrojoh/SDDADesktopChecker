@@ -20,7 +20,7 @@
   </div>
   <header class="desktop-hero">
     <div class="desktop-shell hero-row">
-      <div><p class="desktop-kicker">Sporting Detection Dogs Association</p><h1>SDDA Achievement Ledger</h1><button id="install-app" class="install-app" type="button" hidden>Install app</button><p>Review Scent and Games achievements, calculated combinations, and the shortest path to the next title.</p></div>
+      <div><p class="desktop-kicker">Sporting Detection Dogs Association</p><h1>SDDA Achievement Ledger</h1><button id="install-app" class="install-app" type="button">Install app</button><p>Review Scent and Games achievements, calculated combinations, and the shortest path to the next title.</p></div>
       <a class="account-link" href="https://www.sdda.ca/login/" target="_blank" rel="noopener">Open your SDDA account</a>
     </div>
   </header>
@@ -198,4 +198,39 @@ document.getElementById("sdda-delete-dog")?.addEventListener("click",async()=>{c
 document.getElementById("sdda-backup")?.addEventListener("click",downloadBackup);
 document.getElementById("sdda-restore-file")?.addEventListener("change",e=>{if(e.target.files[0])restoreBackup(e.target.files[0]).catch(err=>alert(err.message));});
 })();
-</script><script>(function(){let installPrompt=null;const button=document.getElementById("install-app");window.addEventListener("beforeinstallprompt",event=>{event.preventDefault();installPrompt=event;if(button)button.hidden=false;});button?.addEventListener("click",async()=>{if(!installPrompt)return;installPrompt.prompt();await installPrompt.userChoice;installPrompt=null;button.hidden=true;});window.addEventListener("appinstalled",()=>{if(button)button.hidden=true;});if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(error=>console.warn("Offline install support unavailable",error)));}})();</script></body></html>
+</script><script>
+(function () {
+  "use strict";
+  let installPrompt = null;
+  const button = document.getElementById("install-app");
+  if (!button) return;
+  button.hidden = false;
+  window.addEventListener("beforeinstallprompt", event => {
+    event.preventDefault();
+    installPrompt = event;
+    button.textContent = "Install app";
+  });
+  button.addEventListener("click", async () => {
+    if (installPrompt) {
+      installPrompt.prompt();
+      await installPrompt.userChoice;
+      installPrompt = null;
+      return;
+    }
+    const isAppleMobile = /iphone|ipad|ipod/i.test(navigator.userAgent);
+    alert(isAppleMobile
+      ? 'To install: tap the Share button, then choose “Add to Home Screen”. Open the saved app once while online so it can prepare for offline use.'
+      : 'To install: open your browser menu (⋮) and choose “Install app” or “Add to Home screen”. If that option is not shown yet, reload this page while online, wait a minute, and check the menu again.');
+  });
+  window.addEventListener("appinstalled", () => {
+    button.textContent = "App installed";
+    button.disabled = true;
+  });
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("./sw.js", { scope: "./" })
+        .catch(error => console.warn("Offline support could not be started", error));
+    });
+  }
+})();
+</script></body></html>
