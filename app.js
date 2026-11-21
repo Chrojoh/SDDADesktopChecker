@@ -278,8 +278,11 @@ function maximizeGoldCombinations(level, list = scores, maximum = 10, includeTit
   };
   const better = (candidate, current) => {
     if (!current) return true;
-    if (candidate.count !== current.count) return candidate.count > current.count;
+    // Gold combinations are the primary objective. Then retain as many
+    // qualifying combinations as possible, maximize their combined score,
+    // and finally use the original score-file row order as the tie-break.
     if (candidate.gold !== current.gold) return candidate.gold > current.gold;
+    if (candidate.count !== current.count) return candidate.count > current.count;
     if (candidate.total !== current.total) return candidate.total > current.total;
     return candidate.tie < current.tie;
   };
@@ -317,12 +320,11 @@ function maximizeGoldCombinations(level, list = scores, maximum = 10, includeTit
         if (better(candidate, best)) best = candidate;
       }
     }
-    // Since Container scores are descending, skipping this record cannot
-    // improve Gold count or total when the best possible number is already met.
-    if (!best || best.count < maximumAdditional) {
-      const skipped = solve(index + 1, exteriorMask, interiorMask);
-      if (better(skipped, best)) best = skipped;
-    }
+    // Always evaluate skipping this Container: a lower Container score
+    // may allow a better global pairing of Exterior and Interior scores,
+    // producing more Gold combinations across the full set.
+    const skipped = solve(index + 1, exteriorMask, interiorMask);
+    if (better(skipped, best)) best = skipped;
     if (!best) best = { count: 0, gold: 0, total: 0, tie: "", sets: [] };
     memo.set(key, best);
     return best;
@@ -1159,12 +1161,21 @@ function progressionRunRows(sets, isElite = false) {
     const container = isElite ? set.parts?.Container : set.container;
     const exterior = isElite ? set.parts?.Exterior : set.exterior;
     const interior = isElite ? set.parts?.Interior : set.interior;
-    const show = (part) => part ? esc(part.score) + ' (' + esc(part.trial || "—") + ')' : "—";
-    return '<div class="run-row ' + (set.gold ? "gold" : classification(set.total).toLowerCase()) + (set.titleLocked ? ' is-title-lock' : '') + '">' +
-      '<b>' + (isElite ? "Trial " + esc(set.trial || "—") : set.special ? "SP" : set.titleLocked ? "Title lock" : "#" + (index + 1)) +
-      '</b><span>Container: ' + show(container) + '</span><span>Exterior: ' + show(exterior) +
-      '</span><span>Interior: ' + show(interior) + '</span><strong>Total: ' + esc(set.total) +
-      ' · ' + classification(set.total) + '</strong></div>';
+    const show = (part, component) => {
+      if (!part) return "—";
+      const score = set.titleLocked
+        ? '<span class="title-lock-score" aria-label="Title-locked score">' + esc(part.score) + '</span>'
+        : esc(part.score);
+      return score + ' (' + esc(part.trial || "—") + ')';
+    };
+    const label = isElite ? "Trial " + esc(set.trial || "—")
+      : set.special ? "SP" : set.titleLocked ? "Title lock" : "#" + (index + 1);
+    return '<div class="run-row ' + (set.gold ? "gold" : classification(set.total).toLowerCase()) + '">' +
+      '<b>' + label + '</b><span>Container: ' + show(container, "Container") +
+      '</span><span>Exterior: ' + show(exterior, "Exterior") +
+      '</span><span>Interior: ' + show(interior, "Interior") +
+      '</span><strong>Total: ' + esc(set.total) + ' · ' + classification(set.total) +
+      '</strong></div>';
   }).join("") + '</div>';
 }
 function progressionCurrentScoreRows(rows, level) {
