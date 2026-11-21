@@ -234,6 +234,7 @@ body,.mobile-ledger,.desktop-ledger{background:#f1f0eb!important;color:#202a25}
 .progression-current-combinations{width:100%;min-width:0}
 .progression-current-combinations>h4,.progression-history>h4{margin:0 0 9px;font-size:14px;font-weight:800}
 .progression-current-combinations .run-grid{width:100%;min-width:0;margin:0}
+.progression-current-combinations .run-row.is-title-lock{border:3px solid #c62828!important;border-radius:999px!important;box-shadow:0 0 0 1px #c62828;}
 .progression-current-combinations .run-row{display:grid;grid-template-columns:100px repeat(3,minmax(0,1fr)) minmax(130px,auto);gap:8px;align-items:center;padding:9px 10px;font-size:12px;overflow-wrap:anywhere}
 .progression-history{width:100%;min-width:0;margin:14px 0 0;padding:13px 0 0;border:0;border-top:1px solid var(--line,#d5d8d2);background:transparent}
 .progression-history .history-component-columns{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
