@@ -109,3 +109,10 @@ body,.mobile-ledger,.desktop-ledger{background:#f1f0eb!important;color:#202a25}
 .sp-definition-line{margin-bottom:14px;color:var(--muted);font-size:13px;line-height:1.4;}
 .progression-score-columns{grid-template-columns:repeat(3,minmax(0,1fr));width:100%;gap:12px;}
 @media(max-width:780px){.progression-score-columns{grid-template-columns:repeat(3,minmax(0,1fr));}}
+
+
+/* Compact progression table shared with the mobile ledger. */
+
+.progression-compact-table tr.single-component-row{background:rgba(80,100,120,.055)}
+.progression-compact-table tr.single-component-row th{font-weight:650;color:var(--muted,#667085)}
+.progression-compact-table .single-score-note{font-size:.72em;color:var(--muted,#667085);white-space:normal}
