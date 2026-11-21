@@ -20,10 +20,7 @@
       </div>
       <p id="pwa-status" role="status" aria-live="polite">Checking offline support…</p>
       <small id="pwa-details">Open this app while connected to prepare its files for offline use.</small>
-      <div id="pwa-help" hidden>
-        <p><strong>Android:</strong> Open the browser menu (⋮) and choose Install app or Add to Home screen.</p>
-        <p><strong>iPhone/iPad:</strong> In Safari, tap Share, then Add to Home Screen.</p>
-      </div>
+      
     </div>
   </details>
 </aside>
@@ -46,7 +43,7 @@
   </div>
   <header class="desktop-hero">
     <div class="desktop-shell hero-row">
-      <div><p class="desktop-kicker">Sporting Detection Dogs Association</p><h1>SDDA Achievement Ledger</h1><button id="install-app" class="install-app" type="button">Install app</button><p>Review Scent and Games achievements, calculated combinations, and the shortest path to the next title.</p></div>
+      <div><p class="desktop-kicker">Sporting Detection Dogs Association</p><h1>SDDA Achievement Ledger</h1><p>Review Scent and Games achievements, calculated combinations, and the shortest path to the next title.</p></div>
       <a class="account-link" href="https://www.sdda.ca/login/" target="_blank" rel="noopener">Open your SDDA account</a>
     </div>
   </header>
@@ -224,54 +221,18 @@ document.getElementById("sdda-delete-dog")?.addEventListener("click",async()=>{c
 document.getElementById("sdda-backup")?.addEventListener("click",downloadBackup);
 document.getElementById("sdda-restore-file")?.addEventListener("change",e=>{if(e.target.files[0])restoreBackup(e.target.files[0]).catch(err=>alert(err.message));});
 })();
-</script><script>
-(function () {
-  "use strict";
-  let installPrompt = null;
-  const button = document.getElementById("install-app");
-  if (!button) return;
-  const isInstalledApp = () => window.matchMedia("(display-mode: standalone)").matches || window.matchMedia("(display-mode: fullscreen)").matches || navigator.standalone === true;
-  button.hidden = isInstalledApp();
-  window.addEventListener("beforeinstallprompt", event => {
-    event.preventDefault();
-    installPrompt = event;
-    button.textContent = "Install app";
-  });
-  button.addEventListener("click", async () => {
-    if (installPrompt) {
-      installPrompt.prompt();
-      await installPrompt.userChoice;
-      installPrompt = null;
-      return;
-    }
-    const isAppleMobile = /iphone|ipad|ipod/i.test(navigator.userAgent);
-    alert(isAppleMobile
-      ? 'To install: tap the Share button, then choose “Add to Home Screen”. Open the saved app once while online so it can prepare for offline use.'
-      : 'To install: open your browser menu (⋮) and choose “Install app” or “Add to Home screen”. If that option is not shown yet, reload this page while online, wait a minute, and check the menu again.');
-  });
-  window.addEventListener("appinstalled", () => {
-    button.hidden = true;
-    installPrompt = null;
-  });
-  if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => {
-      navigator.serviceWorker.register("./sw.js", { scope: "./" })
-        .catch(error => console.warn("Offline support could not be started", error));
-    });
-  }
-})();
 </script><script id="pwa-tools-script">
 (()=>{'use strict';
-const $=id=>document.getElementById(id), install=$('pwa-install'), check=$('pwa-check'), status=$('pwa-status'), details=$('pwa-details'), help=$('pwa-help');
+const $=id=>document.getElementById(id), install=$('pwa-install'), check=$('pwa-check'), status=$('pwa-status'), details=$('pwa-details');
 let promptEvent=null, registration=null, checking=false;
 const installed=()=>matchMedia('(display-mode:standalone)').matches||matchMedia('(display-mode:fullscreen)').matches||navigator.standalone===true;
 const say=(a,b)=>{status.textContent=a;details.textContent=b||'';};
-function updateInstall(){install.hidden=installed();}
-window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();promptEvent=e;install.hidden=installed();});
+function updateInstall(){install.hidden=installed()||!promptEvent;}
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();promptEvent=e;updateInstall();});
 window.addEventListener('appinstalled',()=>{promptEvent=null;install.hidden=true;say('App installed.','Open it from your home screen or app list.');});
 install.addEventListener('click',async()=>{
- if(promptEvent){promptEvent.prompt();await promptEvent.userChoice;promptEvent=null;install.hidden=true;return;}
- help.hidden=!help.hidden;help.dataset.show=help.hidden?'':'1';install.hidden=installed();
+ if(!promptEvent){say('Install is not available yet.','The Install app button will appear here when this device offers standalone installation.');return;}
+ await promptEvent.prompt();await promptEvent.userChoice;promptEvent=null;updateInstall();
 });
 async function inspect(){
  if(!('serviceWorker'in navigator)){say('Offline support is not available in this browser.','Use a supported browser and open this app from its HTTPS website.');return;}
