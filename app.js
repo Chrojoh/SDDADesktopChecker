@@ -278,11 +278,8 @@ function maximizeGoldCombinations(level, list = scores, maximum = 10, includeTit
   };
   const better = (candidate, current) => {
     if (!current) return true;
-    // Gold combinations are the primary objective. Then retain as many
-    // qualifying combinations as possible, maximize their combined score,
-    // and finally use the original score-file row order as the tie-break.
-    if (candidate.gold !== current.gold) return candidate.gold > current.gold;
     if (candidate.count !== current.count) return candidate.count > current.count;
+    if (candidate.gold !== current.gold) return candidate.gold > current.gold;
     if (candidate.total !== current.total) return candidate.total > current.total;
     return candidate.tie < current.tie;
   };
@@ -320,30 +317,9 @@ function maximizeGoldCombinations(level, list = scores, maximum = 10, includeTit
         if (better(candidate, best)) best = candidate;
       }
     }
-    // Bound the skip branch without sacrificing the final score or
-    // source-row tie-break. Gold count and qualifying-combination count
-    // are checked first; the remaining score bound uses the best unused
-    // component values that could still be selected after this Container.
-    const skipMaximum = Math.min(containers.length - index - 1,
-      exteriors.length - bitCount(exteriorMask),
-      interiors.length - bitCount(interiorMask), remainingLimit);
-    const sumTopAvailable = (items, mask, needed, start = 0) => {
-      let sum = 0, found = 0;
-      for (let position = start; position < items.length && found < needed; position++) {
-        if (mask & (1 << position)) continue;
-        sum += items[position].score;
-        found++;
-      }
-      return sum;
-    };
-    const skipUpperTotal = sumTopAvailable(containers, 0, skipMaximum, index + 1) +
-      sumTopAvailable(exteriors, exteriorMask, skipMaximum) +
-      sumTopAvailable(interiors, interiorMask, skipMaximum);
-    const skipCannotBeat = !!best && (
-      best.gold > skipMaximum ||
-      (best.gold === skipMaximum && best.count === skipMaximum && best.total > skipUpperTotal)
-    );
-    if (!skipCannotBeat) {
+    // Since Container scores are descending, skipping this record cannot
+    // improve Gold count or total when the best possible number is already met.
+    if (!best || best.count < maximumAdditional) {
       const skipped = solve(index + 1, exteriorMask, interiorMask);
       if (better(skipped, best)) best = skipped;
     }
@@ -1200,22 +1176,37 @@ function progressionRunRows(sets, isElite = false) {
       '</strong></div>';
   }).join("") + '</div>';
 }
-function progressionCurrentScoreRows(rows, level) {
-  const entries = rows.filter((row) => row.level === level)
-    .sort((a, b) => a.sourceRow - b.sourceRow);
-  // Match History: keep one component column per search area and list each
-  // score with its trial identifier in brackets. Empty components stay blank.
-  return '<div class="history-component-columns">' + COMPONENTS.map((component) => {
-    const componentRows = entries.filter((row) => row.component === component);
-    const output = componentRows.map((row) =>
-      '<div class="history-score"><span>' + esc(row.score) + '</span><small>(' +
-      esc(row.trial || "—") + ')</small></div>'
-    ).join("");
-    return '<section class="history-component"><h4>' + esc(component) + '</h4>' +
-      output + '</section>';
-  }).join("") + '</div>';
+function progressionCurrentScoreRows(sets, level, rows = []) {
+  const qualifying = sets.filter((set) => set.total >= 100);
+  const usedSourceRows = new Set();
+  qualifying.forEach((set) => COMPONENTS.forEach((component) => {
+    const part = component === "Container" ? set.container :
+      component === "Exterior" ? set.exterior : set.interior;
+    if (part && part.sourceRow != null) usedSourceRows.add(String(part.sourceRow));
+  }));
+  const label = (set, index) => set.special ? "SP" : set.titleLocked ? "Title lock" : "#" + (set.rank || index + 1);
+  const score = (part) => part ? esc(part.score) + ' <small>(' + esc(part.trial || "—") + ')</small>' : "—";
+  const combinationRows = qualifying.map((set, index) =>
+    '<tr class="' + (set.gold ? "gold" : "") + (set.titleLocked || set.special ? " locked-score-row" : "") + '">' +
+    '<th scope="row">' + label(set, index) + '</th>' +
+    '<td>' + score(set.container) + '</td><td>' + score(set.exterior) + '</td>' +
+    '<td>' + score(set.interior) + '</td><td><strong>' + esc(set.total) + '</strong></td></tr>'
+  );
+  // Scores that are not part of a qualifying three-component combination
+  // still belong in the current ledger. Show each once as a single-component row.
+  const individualRows = rows.filter((row) => row.level === level && !usedSourceRows.has(String(row.sourceRow)))
+    .sort((a, b) => a.sourceRow - b.sourceRow)
+    .map((row) => '<tr class="single-component-row">' +
+      '<th scope="row">Single score</th>' +
+      '<td>' + (row.component === "Container" ? score(row) : "—") + '</td>' +
+      '<td>' + (row.component === "Exterior" ? score(row) : "—") + '</td>' +
+      '<td>' + (row.component === "Interior" ? score(row) : "—") + '</td>' +
+      '<td><span class="single-score-note">Not yet combined</span></td></tr>');
+  if (!combinationRows.length && !individualRows.length) return '<p class="run-empty">No current component scores yet.</p>';
+  return '<div class="progression-compact-table-wrap"><table class="progression-compact-table">' +
+    '<thead><tr><th>Combination</th><th title="Container">C</th><th title="Exterior">E</th><th title="Interior">I</th><th>Total</th></tr></thead>' +
+    '<tbody>' + combinationRows.join("") + individualRows.join("") + '</tbody></table></div>';
 }
-
 function renderProgressionScoreColumns(activeLedger = currentMachLedgerRows()) {
   const advancedRows = activeLedger.verified ? activeLedger.rows.filter((row) => row.level === "Advanced") : [];
   const excellentRows = activeLedger.verified ? activeLedger.rows.filter((row) => row.level === "Excellent") : [];
@@ -1243,7 +1234,7 @@ function renderProgressionScoreColumns(activeLedger = currentMachLedgerRows()) {
         ? progressionRunRows(card.sets, true)
         : !activeLedger.verified
           ? '<p class="run-empty">Current scores are withheld until the recorded MACH cutoff can be verified.</p>'
-          : progressionRunRows(card.sets);
+          : progressionCurrentScoreRows(card.sets, card.level, card.rows);
       return '<details class="progression-score-column title-accordion ' + card.accent + '">' +
         '<summary class="progression-card-header"><span class="summary-copy"><strong>' + card.level +
         '</strong><small>' + count + '</small></span><span class="summary-action">Details</span></summary>' +
