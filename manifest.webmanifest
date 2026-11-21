@@ -1,4 +1,5 @@
 {
+  "id": "./",
   "name": "SDDA Achievement Ledger",
   "short_name": "SDDA Ledger",
   "description": "Private, on-device SDDA scent and Games achievement tracker.",
@@ -11,9 +12,15 @@
   "icons": [
     {
       "src": "./icons/icon.svg",
-      "sizes": "any",
+      "sizes": "192x192 512x512",
       "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "./icons/icon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
     }
   ]
 }
