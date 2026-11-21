@@ -320,11 +320,13 @@ function maximizeGoldCombinations(level, list = scores, maximum = 10, includeTit
         if (better(candidate, best)) best = candidate;
       }
     }
-    // Always evaluate skipping this Container: a lower Container score
-    // may allow a better global pairing of Exterior and Interior scores,
-    // producing more Gold combinations across the full set.
-    const skipped = solve(index + 1, exteriorMask, interiorMask);
-    if (better(skipped, best)) best = skipped;
+    // If the best branch already reaches the maximum possible Gold
+    // count for this state, skipping cannot improve Gold count or the
+    // number of combinations. Otherwise explore the alternate pairing.
+    if (!best || best.gold < maximumAdditional) {
+      const skipped = solve(index + 1, exteriorMask, interiorMask);
+      if (better(skipped, best)) best = skipped;
+    }
     if (!best) best = { count: 0, gold: 0, total: 0, tie: "", sets: [] };
     memo.set(key, best);
     return best;
