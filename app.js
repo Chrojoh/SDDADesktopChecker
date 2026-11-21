@@ -320,10 +320,30 @@ function maximizeGoldCombinations(level, list = scores, maximum = 10, includeTit
         if (better(candidate, best)) best = candidate;
       }
     }
-    // If the best branch already reaches the maximum possible Gold
-    // count for this state, skipping cannot improve Gold count or the
-    // number of combinations. Otherwise explore the alternate pairing.
-    if (!best || best.gold < maximumAdditional) {
+    // Bound the skip branch without sacrificing the final score or
+    // source-row tie-break. Gold count and qualifying-combination count
+    // are checked first; the remaining score bound uses the best unused
+    // component values that could still be selected after this Container.
+    const skipMaximum = Math.min(containers.length - index - 1,
+      exteriors.length - bitCount(exteriorMask),
+      interiors.length - bitCount(interiorMask), remainingLimit);
+    const sumTopAvailable = (items, mask, needed, start = 0) => {
+      let sum = 0, found = 0;
+      for (let position = start; position < items.length && found < needed; position++) {
+        if (mask & (1 << position)) continue;
+        sum += items[position].score;
+        found++;
+      }
+      return sum;
+    };
+    const skipUpperTotal = sumTopAvailable(containers, 0, skipMaximum, index + 1) +
+      sumTopAvailable(exteriors, exteriorMask, skipMaximum) +
+      sumTopAvailable(interiors, interiorMask, skipMaximum);
+    const skipCannotBeat = !!best && (
+      best.gold > skipMaximum ||
+      (best.gold === skipMaximum && best.count === skipMaximum && best.total > skipUpperTotal)
+    );
+    if (!skipCannotBeat) {
       const skipped = solve(index + 1, exteriorMask, interiorMask);
       if (better(skipped, best)) best = skipped;
     }
