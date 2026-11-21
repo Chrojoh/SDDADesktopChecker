@@ -1,4 +1,4 @@
-const CACHE_NAME = "sdda-ledger-offline-v5-desktop";
+const CACHE_NAME = "sdda-ledger-offline-v6-desktop";
 const CORE_ASSETS = [
   "./",
   "./index.html",
@@ -10,7 +10,9 @@ const CORE_ASSETS = [
   "./vendor/xlsx.full.min.js",
   "./vendor/pdf-lib.min.js",
   "./manifest.webmanifest",
-  "./icons/icon.svg"
+  "./icons/icon.svg",
+  "./icons/icon-192.png",
+  "./icons/icon-512.png"
 ];
 
 self.addEventListener("install", event => {
