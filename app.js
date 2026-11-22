@@ -177,26 +177,62 @@ function chronologicalTrialGroups(level, list = scores) {
 
 function firstCompletedTitleSet(level, list = scores) {
   if (level !== "Advanced" && level !== "Excellent") return null;
-  const groups = chronologicalTrialGroups(level, list), seen = [], passed = new Set();
+  const groups = chronologicalTrialGroups(level, list), historyThroughCompletion = [], passed = new Set();
   for (const group of groups) {
     const groupRows = [...group.rows].sort((a, b) => a.sourceRow - b.sourceRow);
-    const newlyPassedRows = groupRows.filter((row) => !passed.has(row.component));
-    const componentsHere = new Set(groupRows.map((row) => row.component));
-    seen.push(...groupRows);
+    historyThroughCompletion.push(...groupRows);
     groupRows.forEach((row) => passed.add(row.component));
+    // The completion trial is the first trial which supplies the third
+    // previously unseen component. Only scores through this trial are eligible.
     if (!COMPONENTS.every((component) => passed.has(component))) continue;
-    const completionRow = newlyPassedRows[newlyPassedRows.length - 1];
-    if (!completionRow) return null;
-    const special = COMPONENTS.every((component) => componentsHere.has(component));
-    const parts = Object.fromEntries(COMPONENTS.map((component) => {
-      const eligible = special || component === completionRow.component ? groupRows : seen;
-      return [component, eligible.filter((row) => row.component === component)
-        .sort((a, b) => b.score - a.score || a.sourceRow - b.sourceRow)[0]];
-    }));
-    if (!COMPONENTS.every((component) => parts[component])) return null;
+
+    // SP requires a passing score in every component on this completion trial.
+    // Its locked records must therefore all carry this same trial number.
+    const special = COMPONENTS.every((component) =>
+      groupRows.some((row) => row.component === component && validComponentScore(level, component, row.score)));
+    let parts;
+    if (special) {
+      // The SP title is tied to the completion trial: select its best passing
+      // score in each component so all three locked trial numbers match.
+      parts = Object.fromEntries(COMPONENTS.map((component) => [
+        component,
+        groupRows.filter((row) => row.component === component && validComponentScore(level, component, row.score))
+          .sort((a, b) => b.score - a.score || a.sourceRow - b.sourceRow)[0]
+      ]));
+    } else {
+      // Regular titles use the highest-scoring combination through the
+      // completion trial, but the three selected scores cannot all be from
+      // one trial. Pair Container/Exterior, then choose the best Interior
+      // that keeps the combination cross-trial.
+      const ranked = Object.fromEntries(COMPONENTS.map((component) => [
+        component,
+        historyThroughCompletion.filter((row) => row.component === component)
+          .sort((a, b) => b.score - a.score || a.sourceRow - b.sourceRow)
+      ]));
+      let best = null;
+      for (const container of ranked.Container) {
+        for (const exterior of ranked.Exterior) {
+          const interior = ranked.Interior.find((row) =>
+            String(row.trial || "") !== String(container.trial || "") ||
+            String(row.trial || "") !== String(exterior.trial || ""));
+          if (!interior) continue;
+          const candidate = { Container: container, Exterior: exterior, Interior: interior };
+          const total = container.score + exterior.score + interior.score;
+          if (!best || total > best.total ||
+              (total === best.total && [container.sourceRow, exterior.sourceRow, interior.sourceRow]
+                .join(":").localeCompare(best.tie) < 0)) {
+            best = { parts: candidate, total, tie: [container.sourceRow, exterior.sourceRow, interior.sourceRow].join(":") };
+          }
+        }
+      }
+      parts = best?.parts || null;
+    }
+    if (!parts || !COMPONENTS.every((component) => parts[component])) return null;
     const total = COMPONENTS.reduce((sum, component) => sum + parts[component].score, 0);
-    return { level, trial: group.trial, parts, total, gold: total >= 192, special,
-      completionComponent: completionRow.component, completionTrial: group.trial, eligibleRows: [...seen] };
+    return {
+      level, trial: group.trial, parts, total, gold: total >= 192, special,
+      completionTrial: group.trial, eligibleRows: [...historyThroughCompletion]
+    };
   }
   return null;
 }
@@ -359,6 +395,22 @@ function eliteSets(list = scores) {
 function inferredTitles() {
   const inferred = [];
   for (const level of ["Started", "Advanced", "Excellent"]) {
+    if (level === "Advanced" || level === "Excellent") {
+      const completed = firstCompletedTitleSet(level);
+      if (!completed) continue;
+      const completionRow = completed.eligibleRows
+        .filter((row) => String(row.trial || "") === String(completed.completionTrial || ""))
+        .sort((a, b) => a.sourceRow - b.sourceRow)
+        .at(-1);
+      inferred.push({
+        description: `${level}${completed.special ? " Special" : ""}`,
+        honours: completed.special && completed.trial ? `Same-trial completion · Trial ${completed.trial}` : "",
+        score: completed.total,
+        date: completionRow?.date || "",
+        calculated: true
+      });
+      continue;
+    }
     const rows = byLevel(level);
     if (!COMPONENTS.every((component) => rows.some((row) => row.component === component))) continue;
     // Use the score export's top-to-bottom chronological order. Trial Number
