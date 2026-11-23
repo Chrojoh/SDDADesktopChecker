@@ -1341,7 +1341,8 @@ function progressionMachBlockMarkup(level, stageIndex) {
       '<td>' + scoreCell(parts.Container) + '</td>' +
       '<td>' + scoreCell(parts.Exterior) + '</td>' +
       '<td>' + scoreCell(parts.Interior) + '</td>' +
-      '<td>' + (complete ? '<strong>' + total + '</strong><small>' + grade + '</small>' : '—') +
+      '<td>' + (complete ? '<strong>' + grade + '</strong>' : '—') + '</td>' +
+      '<td>' + (complete ? '<strong>' + total + '</strong>' : '—') +
       '</td></tr>');
   }
   const unmatchedAfterLimit = COMPONENTS.map(component => columns[component].slice(10 - (titleLock ? 1 : 0)));
@@ -1361,11 +1362,11 @@ function progressionMachBlockMarkup(level, stageIndex) {
   const completedLabel = own ? ' · title achieved' : ' · in progress';
   return '<details class="mach-stage-card">' +
     '<summary><span><strong>' + esc(stage.label) + '</strong><small>' + cutoffText + completedLabel +
-    '</small></span><span class="mach-stage-counts">C ' + count("Container") +
-    ' · E ' + count("Exterior") + ' · I ' + count("Interior") +
+    '</small></span><span class="mach-stage-counts">Container ' + count("Container") +
+    ' · Exterior ' + count("Exterior") + ' · Interior ' + count("Interior") +
     ' · ' + (combinationCount + (titleLock ? 1 : 0)) + ' combinations</span></summary>' +
     '<div class="mach-stage-content"><div class="progression-compact-table-wrap"><table class="progression-compact-table mach-stage-table">' +
-    '<thead><tr><th>Row</th><th title="Container">C</th><th title="Exterior">E</th><th title="Interior">I</th><th>Total / grade</th></tr></thead>' +
+    '<thead><tr><th>Row</th><th>Container</th><th>Exterior</th><th>Interior</th><th>Grade</th><th>Total</th></tr></thead>' +
     '<tbody>' + (rows.length ? rows.join("") : '<tr><td colspan="5">No component scores in this block yet.</td></tr>') +
     '</tbody></table></div></div></details>';
 }
@@ -1422,7 +1423,7 @@ function progressionEliteBlockMarkup(stageIndex) {
       '<th>' + label + '</th>' +
       COMPONENTS.map(component => '<td>' + esc(set.parts[component].score) +
         ' <small>(' + esc(set.parts[component].trial || set.trial || '—') + ')</small></td>').join('') +
-      '<td><strong>' + set.total + '</strong><small>' + grade + '</small></td></tr>';
+      '<td><strong>' + grade + '</strong></td><td><strong>' + set.total + '</strong></td></tr>';
   });
   const usedEliteRows = new Set(sorted.flatMap(set => COMPONENTS.map(component => String(set.parts[component].sourceRow))));
   const unmatchedElite = Object.fromEntries(COMPONENTS.map(component => [component,
@@ -1444,11 +1445,11 @@ function progressionEliteBlockMarkup(stageIndex) {
     ? 'Cutoff: ' + esc(dateLabel(recorded.date)) + ' · Trial ' + esc(honour?.[1] || 'not listed')
     : 'In progress · no title cutoff yet';
   return '<details class="mach-stage-card"><summary><span><strong>' + esc(stage.label) +
-    '</strong><small>' + cutoffText + '</small></span><span class="mach-stage-counts">C ' +
-    counts.Container + ' · E ' + counts.Exterior + ' · I ' + counts.Interior +
+    '</strong><small>' + cutoffText + '</small></span><span class="mach-stage-counts">Container ' +
+    counts.Container + ' · Exterior ' + counts.Exterior + ' · Interior ' + counts.Interior +
     ' · ' + sets.length + ' combinations</span></summary><div class="mach-stage-content">' +
     '<div class="progression-compact-table-wrap"><table class="progression-compact-table mach-stage-table">' +
-    '<thead><tr><th>Trial</th><th>C</th><th>E</th><th>I</th><th>Total / grade</th></tr></thead><tbody>' +
+    '<thead><tr><th>Trial</th><th>Container</th><th>Exterior</th><th>Interior</th><th>Grade</th><th>Total</th></tr></thead><tbody>' +
     (rows.length ? rows.join('') : '<tr><td colspan="5">No complete same-trial combinations yet.</td></tr>') +
     '</tbody></table></div></div></details>';
 }
