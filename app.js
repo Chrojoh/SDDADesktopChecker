@@ -1283,6 +1283,10 @@ function progressionMachBlockMarkup(level, stageIndex) {
   if (!groups) return '<p class="run-empty">Chronological trial order could not be verified.</p>';
   const prior = stageIndex > 0 ? machCutoffRowForTitle(stages[stageIndex - 1].key) : null;
   const own = machCutoffRowForTitle(stage.key);
+  if (championshipTitle(stage.key) && !own) {
+    return '<div class="mach-stage-card mach-stage-locked"><div class="mach-stage-locked-header"><strong>' +
+      esc(stage.label) + '</strong><small>Recorded title cutoff could not be verified; scores are withheld to avoid mixing blocks</small></div></div>';
+  }
   const active = stageIndex === 0 || !!prior;
   const priorRecorded = stageIndex === 0 || !!championshipTitle(stages[stageIndex - 1].key);
   if (!active) {
@@ -1416,6 +1420,19 @@ function progressionEliteBlockMarkup(stageIndex) {
         ' <small>(' + esc(set.parts[component].trial || set.trial || '—') + ')</small></td>').join('') +
       '<td><strong>' + set.total + '</strong><small>' + grade + '</small></td></tr>';
   });
+  const usedEliteRows = new Set(sorted.flatMap(set => COMPONENTS.map(component => String(set.parts[component].sourceRow))));
+  const unmatchedElite = Object.fromEntries(COMPONENTS.map(component => [component,
+    blockRows.filter(row => row.component === component && !usedEliteRows.has(String(row.sourceRow)))
+      .sort((a,b) => b.score - a.score || a.sourceRow - b.sourceRow)
+  ]));
+  const unmatchedEliteCount = Math.max(0, ...COMPONENTS.map(component => unmatchedElite[component].length));
+  for (let i = 0; i < unmatchedEliteCount; i++) {
+    rows.push('<tr class="unmatched-score-row"><th>Unmatched</th>' +
+      COMPONENTS.map(component => {
+        const part = unmatchedElite[component][i];
+        return '<td>' + (part ? esc(part.score) + ' <small>(' + esc(part.trial || '—') + ')</small>' : '—') + '</td>';
+      }).join('') + '<td>—</td></tr>');
+  }
   const counts = Object.fromEntries(COMPONENTS.map(component => [
     component, blockRows.filter(row => row.component === component).length
   ]));
