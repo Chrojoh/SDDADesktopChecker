@@ -1289,11 +1289,7 @@ function progressionMachBlockMarkup(level, stageIndex) {
   }
   const active = stageIndex === 0 || !!prior;
   const priorRecorded = stageIndex === 0 || !!championshipTitle(stages[stageIndex - 1].key);
-  if (!active) {
-    return '<div class="mach-stage-card mach-stage-locked"><div class="mach-stage-locked-header"><strong>' +
-      esc(stage.label) + '</strong><small>Locked · requires ' + esc(stages[stageIndex - 1].label) +
-      '</small></div></div>';
-  }
+  if (!active) return '';
   if (stageIndex > 0 && !prior) {
     return '<div class="mach-stage-card mach-stage-locked"><div class="mach-stage-locked-header"><strong>' +
       esc(stage.label) + '</strong><small>Prior title is recorded, but its score cutoff is not verified</small></div></div>';
@@ -1384,10 +1380,7 @@ function progressionEliteBlockMarkup(stageIndex) {
   ];
   const stage = stages[stageIndex];
   const baseTitle = stageIndex === 0 ? findTitle(/^Elite(?:\s|$)/i) : championshipTitle(stages[stageIndex - 1].key);
-  if (!baseTitle) return '<div class="mach-stage-card mach-stage-locked"><div class="mach-stage-locked-header"><strong>' +
-    esc(stage.label) + '</strong><small>Locked · requires ' +
-    (stageIndex === 0 ? 'Elite title' : esc(stages[stageIndex - 1].label)) +
-    '</small></div></div>';
+  if (!baseTitle) return '';
   const available = scoreRowsAfterTitle(baseTitle) || [];
   const recorded = championshipTitle(stage.key);
   const honour = String(recorded?.honours || '').match(/trial\s*#?\s*(\d+)/i);
