@@ -2063,13 +2063,13 @@ async function downloadPdfReport() {
   }
   function heading(value, size = 15) { if (y < 90) newPage(); y -= 5; text(value, { size, bold: true, color: rgb(.13, .37, .27), leading: size + 4, after: 4 }); }
   function scoreTable(title, rows) {
-    const headers = ["Combination / Trial", "Container", "Exterior", "Interior", "Total", "Classification"];
-    const widths = [130, 70, 70, 70, 60, 120], tableWidth = widths.reduce((sum, width) => sum + width, 0), rowHeight = 19, sectionHeight = 23, headerHeight = 21;
-    const drawCells = (values, height, fill, header = false) => { let x = margin; values.forEach((value, index) => { page.drawRectangle({ x, y: y - height, width: widths[index], height, color: fill, borderColor: rgb(.42, .48, .44), borderWidth: .8 }); const cellFont = header ? bold : index === 0 || index === 5 ? bold : regular, size = header ? 7.5 : 8.5, safe = String(value ?? "").replace(/[^\x20-\x7E]/g, " "), textWidth = cellFont.widthOfTextAtSize(safe, size); page.drawText(safe, { x: index > 0 ? x + Math.max(4, (widths[index] - textWidth) / 2) : x + 6, y: y - height + 6, size, font: cellFont, color: rgb(.10, .14, .12) }); x += widths[index]; }); y -= height; };
+    const headers = ["Combination / Trial", "Container", "Exterior", "Interior", "Grade", "Total"];
+    const widths = [130, 70, 70, 70, 80, 100], tableWidth = widths.reduce((sum, width) => sum + width, 0), rowHeight = 19, sectionHeight = 23, headerHeight = 21;
+    const drawCells = (values, height, fill, header = false) => { let x = margin; values.forEach((value, index) => { page.drawRectangle({ x, y: y - height, width: widths[index], height, color: fill, borderColor: rgb(.42, .48, .44), borderWidth: .8 }); const cellFont = header ? bold : index === 0 || index >= 4 ? bold : regular, size = header ? 7.5 : 8.5, safe = String(value ?? "").replace(/[^\x20-\x7E]/g, " "), textWidth = cellFont.widthOfTextAtSize(safe, size); page.drawText(safe, { x: index > 0 ? x + Math.max(4, (widths[index] - textWidth) / 2) : x + 6, y: y - height + 6, size, font: cellFont, color: rgb(.10, .14, .12) }); x += widths[index]; }); y -= height; };
     const drawHeader = (continued = false) => { page.drawRectangle({ x: margin, y: y - sectionHeight, width: tableWidth, height: sectionHeight, color: rgb(.13, .37, .27), borderColor: rgb(.08, .24, .17), borderWidth: 1 }); page.drawText(`${title}${continued ? " (continued)" : ""}`, { x: margin + 7, y: y - 16, size: 10, font: bold, color: rgb(1, 1, 1) }); y -= sectionHeight; drawCells(headers, headerHeight, rgb(.89, .92, .90), true); };
     if (y < 52 + sectionHeight + headerHeight + rowHeight) newPage(); drawHeader();
     const tableRows = rows.length ? rows : [["No current scores", "-", "-", "-", "-", "-"]];
-    for (const row of tableRows) { if (y < 52 + rowHeight) { newPage(); drawHeader(true); } drawCells(row, rowHeight, row[5] === "Gold" ? rgb(1, .96, .84) : rgb(1, 1, 1)); }
+    for (const row of tableRows) { if (y < 52 + rowHeight) { newPage(); drawHeader(true); } drawCells(row, rowHeight, row[4] === "Gold" ? rgb(1, .96, .84) : rgb(1, 1, 1)); }
     y -= 10;
   }
   newPage();
@@ -2159,8 +2159,8 @@ async function downloadPdfReport() {
       componentWithTrial(set.container),
       componentWithTrial(set.exterior),
       componentWithTrial(set.interior),
-      set.total,
-      classification(set.total)
+      classification(set.total),
+      set.total
     ]);
   // The combination optimizer only returns complete three-component sets.
   // Keep every remaining current component visible as its own partial row,
@@ -2214,7 +2214,7 @@ async function downloadPdfReport() {
     }
   }
   const eliteCombinations = eliteSets();
-  scoreTable("Elite - same-trial sets", eliteCombinations.map((set, index) => [`Elite ${index + 1}`, componentWithTrial(set.parts.Container), componentWithTrial(set.parts.Exterior), componentWithTrial(set.parts.Interior), set.total, classification(set.total)]));
+  scoreTable("Elite - same-trial sets", eliteCombinations.map((set, index) => [`Elite ${index + 1}`, componentWithTrial(set.parts.Container), componentWithTrial(set.parts.Exterior), componentWithTrial(set.parts.Interior), classification(set.total), set.total]));
 
   y -= 8;
   text("Limitations", { size: 11, bold: true, color: rgb(.61, .26, .24) });
