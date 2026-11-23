@@ -1355,7 +1355,7 @@ function progressionMachBlockMarkup(level, stageIndex) {
     : own ? 'Achieved · ' + esc(dateLabel(own.date)) + ' · Trial ' + esc(own.trial)
       : 'In progress · no title cutoff yet';
   const completedLabel = own ? ' · title achieved' : ' · in progress';
-  return '<details class="mach-stage-card" open>' +
+  return '<details class="mach-stage-card">' +
     '<summary><span><strong>' + esc(stage.label) + '</strong><small>' + cutoffText + completedLabel +
     '</small></span><span class="mach-stage-counts">C ' + count("Container") +
     ' · E ' + count("Exterior") + ' · I ' + count("Interior") +
@@ -1422,7 +1422,7 @@ function progressionEliteBlockMarkup(stageIndex) {
   const cutoffText = recorded
     ? 'Cutoff: ' + esc(dateLabel(recorded.date)) + ' · Trial ' + esc(honour?.[1] || 'not listed')
     : 'In progress · no title cutoff yet';
-  return '<details class="mach-stage-card" open><summary><span><strong>' + esc(stage.label) +
+  return '<details class="mach-stage-card"><summary><span><strong>' + esc(stage.label) +
     '</strong><small>' + cutoffText + '</small></span><span class="mach-stage-counts">C ' +
     counts.Container + ' · E ' + counts.Exterior + ' · I ' + counts.Interior +
     ' · ' + sets.length + ' combinations</span></summary><div class="mach-stage-content">' +
