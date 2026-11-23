@@ -1631,6 +1631,9 @@ function achievementVerificationIssues() {
     const record = item.record;
     if (!record || !record.date) continue;
     const groups = chronologicalTrialGroups("Elite", scores);
+    const invalidTrialSequence = groups.some(group =>
+      !group.trial || !Number.isSafeInteger(Number(group.trial)) || Number(group.trial) <= 0
+    );
     const honourTrial = String(record.honours || "").match(/trial\s*#?\s*(\d+)/i);
     const matchingTrial = honourTrial
       ? groups.find(group => Number(group.trial) === Number(honourTrial[1]))
@@ -1639,7 +1642,7 @@ function achievementVerificationIssues() {
     const cutoffRows = item.label === "Elite"
       ? scoreRowsAfterTitle(record)
       : item.prior ? scoreRowsAfterTitle(item.prior) : null;
-    if (!groups.length || (honourTrial && !matchingTrial) || (!honourTrial && !hasDateRows) ||
+    if (!groups.length || invalidTrialSequence || (honourTrial && !matchingTrial) || (!honourTrial && !hasDateRows) ||
         (item.label !== "Elite" && item.prior && cutoffRows === null)) {
       add("Needs confirmation", item.label,
         "The recorded Elite achievement boundary cannot be reliably located in the uploaded score history.",
