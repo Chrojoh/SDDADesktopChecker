@@ -1565,6 +1565,129 @@ function scoreRowsAfterTitle(priorTitle) {
   return groups.slice(cutoffIndex + 1).flatMap((group) => group.rows);
 }
 
+
+function achievementVerificationIssues() {
+  const issues = [];
+  const add = (severity, subject, concern, evidence, question) => issues.push({
+    severity, subject, concern, evidence, question
+  });
+  const latestScoreDate = scores.map(row => row.date).filter(Boolean).sort().at(-1) || "";
+  const titleLabel = title => String(title.description || "Recorded title").trim();
+
+  for (const title of titles) {
+    if (!title.date) {
+      add("Needs confirmation", titleLabel(title),
+        "The title record has no usable award date. The Titles file date is required to establish progression cutoffs.",
+        "The Title Date cell is blank or could not be interpreted as a valid date.",
+        "Please confirm the official award date and correct the source record if needed.");
+    }
+  }
+
+  const machStages = [
+    { key: "mach", label: "SD-MACH" },
+    { key: "mach2", label: "SD-MACH2" },
+    { key: "mach3", label: "SD-MACH3" },
+    { key: "mach4", label: "SD-MACH4" }
+  ];
+  for (const stage of machStages) {
+    const recorded = championshipTitle(stage.key);
+    if (!recorded) continue;
+    if (!recorded.date) continue; // The missing-date issue is already listed above.
+    const honourTrial = String(recorded.honours || "").match(/trial\s*#?\s*(\d+)/i);
+    const groups = machTrialGroups();
+    const cutoff = machCutoffRowForTitle(stage.key);
+    if (!groups) {
+      add("Needs confirmation", stage.label,
+        "The chronological score sequence cannot be checked because one or more Advanced or Excellent rows have a missing or invalid trial number.",
+        "The Titles file records " + dateLabel(recorded.date) + ", but the score export does not provide a complete usable trial sequence.",
+        "Please confirm the title-earning trial and the correct chronological score history with SDDA.");
+    } else if (!cutoff) {
+      const sameDate = scores.filter(row =>
+        (row.level === "Advanced" || row.level === "Excellent") && row.date === recorded.date
+      );
+      add("Needs confirmation", stage.label,
+        "The recorded award date could not be matched to a trial at which the required championship combinations can be verified.",
+        "Titles file date: " + dateLabel(recorded.date) +
+          (honourTrial ? "; Honours trial: " + honourTrial[1] : "; no trial number is listed in Honours") +
+          "; qualifying-level score rows on that date: " + sameDate.length + ".",
+        "Please ask SDDA to confirm the official award date and title-earning trial. The checker has not moved the cutoff or reassigned scores.");
+    } else if (honourTrial && Number(honourTrial[1]) !== Number(cutoff.trial)) {
+      add("Needs confirmation", stage.label,
+        "The trial number in the title record does not match the trial reconstructed from the score history.",
+        "Titles file: Trial " + honourTrial[1] + "; score calculation: Trial " + cutoff.trial +
+          " on " + dateLabel(cutoff.date) + ".",
+        "Please confirm which trial completed the title and whether the Honours entry needs correction.");
+    }
+  }
+
+  const eliteTitleRecords = [
+    { label: "Elite", record: findTitle(/^Elite(?:\s|$)/i), prior: null },
+    { label: "SD-ELCH", record: championshipTitle("elch"), prior: findTitle(/^Elite(?:\s|$)/i) },
+    { label: "SD-ELCH2", record: championshipTitle("elch2"), prior: championshipTitle("elch") },
+    { label: "SD-ELCH3", record: championshipTitle("elch3"), prior: championshipTitle("elch2") },
+    { label: "SD-ELCH4", record: championshipTitle("elch4"), prior: championshipTitle("elch3") }
+  ];
+  for (const item of eliteTitleRecords) {
+    const record = item.record;
+    if (!record || !record.date) continue;
+    const groups = chronologicalTrialGroups("Elite", scores);
+    const honourTrial = String(record.honours || "").match(/trial\s*#?\s*(\d+)/i);
+    const matchingTrial = honourTrial
+      ? groups.find(group => Number(group.trial) === Number(honourTrial[1]))
+      : null;
+    const hasDateRows = groups.some(group => group.rows.some(row => row.date === record.date));
+    const cutoffRows = item.label === "Elite"
+      ? scoreRowsAfterTitle(record)
+      : item.prior ? scoreRowsAfterTitle(item.prior) : null;
+    if (!groups.length || (honourTrial && !matchingTrial) || (!honourTrial && !hasDateRows) ||
+        (item.label !== "Elite" && item.prior && cutoffRows === null)) {
+      add("Needs confirmation", item.label,
+        "The recorded Elite achievement boundary cannot be reliably located in the uploaded score history.",
+        "Titles file date: " + dateLabel(record.date) +
+          (honourTrial ? "; Honours trial: " + honourTrial[1] : "; no exact trial number is listed") +
+          "; Elite score rows available: " + scores.filter(row => row.level === "Elite").length + ".",
+        "Please confirm the award date and title-earning trial with SDDA before using this boundary to count later Elite scores.");
+    }
+  }
+
+  if (latestScoreDate) {
+    for (const title of titles) {
+      if (title.date && title.date > latestScoreDate &&
+          /^(?:Advanced|Excellent|Elite|SD[- ]?(?:MACH|ELCH))/i.test(String(title.description || ""))) {
+        add("Review", titleLabel(title),
+          "The recorded award date is later than every event date in the uploaded score file.",
+          "Title Date: " + dateLabel(title.date) + "; latest score Event Date: " + dateLabel(latestScoreDate) + ".",
+          "Check that the correct dog's complete score export and the matching Titles file were uploaded.");
+      }
+    }
+  }
+
+  const unique = new Map();
+  for (const issue of issues) {
+    const key = [issue.subject, issue.concern, issue.evidence].join("|");
+    if (!unique.has(key)) unique.set(key, issue);
+  }
+  return [...unique.values()];
+}
+
+function renderAchievementVerificationReport() {
+  const host = $("verification-report");
+  if (!host) return;
+  const issues = achievementVerificationIssues();
+  if (!issues.length) {
+    host.innerHTML = '<div class="verification-report-clear"><strong>No potential record discrepancies detected.</strong><p>The checker found no issues in the date and cutoff checks it can perform. This is not official SDDA confirmation.</p></div>';
+    return;
+  }
+  host.innerHTML = '<div class="verification-report-summary"><strong>' + issues.length +
+    ' item' + (issues.length === 1 ? '' : 's') + ' to review with SDDA</strong><p>These are possible data or record discrepancies, not automatic findings that a title is invalid. No source records have been changed.</p></div>' +
+    '<ol class="verification-issue-list">' + issues.map((issue, index) =>
+      '<li><div class="verification-issue-heading"><strong>' + (index + 1) + '. ' + esc(issue.subject) +
+      '</strong><span>' + esc(issue.severity) + '</span></div><p>' + esc(issue.concern) +
+      '</p><p><b>Evidence:</b> ' + esc(issue.evidence) +
+      '</p><p><b>Ask SDDA:</b> ' + esc(issue.question) + '</p></li>'
+    ).join('') + '</ol>';
+}
+
 function render() {
   if (!scores.length && !games.length) { $("report").hidden = true; return; }
   if (!titlesFileLoaded) {
@@ -1604,6 +1727,7 @@ function render() {
 
   const shownTitles = displayedTitles();
   $("achieved").innerHTML = shownTitles.map((title) => `<article class="title-card"><h3>${esc(title.description)}</h3><span class="status met">${title.calculated ? "Calculated from scores" : "Recorded by SDDA"}</span><div class="score">${title.score == null || Number.isNaN(title.score) ? "—" : esc(title.score)}</div><p>${title.score == null || Number.isNaN(title.score) ? "No title score supplied" : title.calculated ? "Calculated component total" : "Recorded title score"}</p><p><strong>${esc(dateLabel(title.date))}</strong>${title.honours ? ` · ${esc(title.honours)}` : ""}</p></article>`).join("") || `<article class="title-card"><h3>No complete title found</h3><p>The score history does not yet contain a qualifying score in every required component.</p></article>`;
+  renderAchievementVerificationReport();
 
   const cards = [];
   const levelRules = {
@@ -1980,6 +2104,21 @@ async function downloadPdfReport() {
     }
     const details = [dateLabel(title.date), title.score == null || Number.isNaN(title.score) ? "" : `Score ${title.score}`, title.honours || ""].filter(Boolean).join(" | ");
     text(`${title.description} — ${title.calculated ? "Calculated" : "SDDA recorded"}${details ? " | " + details : ""}`, { size: 9, bold: true, color: title.calculated ? rgb(.28, .36, .31) : rgb(.10, .14, .12), after: 2 });
+  }
+
+
+  heading("Achievement verification items for SDDA");
+  const verificationIssues = achievementVerificationIssues();
+  if (!verificationIssues.length) {
+    text("No potential date or championship-cutoff discrepancies were detected by the checks available in this report. This is not official SDDA confirmation.", { size: 9, color: rgb(.25, .38, .29), after: 5 });
+  } else {
+    text(verificationIssues.length + " item(s) need review. These are possible record discrepancies, not automatic findings that a title is invalid. No source records have been changed.", { size: 9, bold: true, color: rgb(.58, .29, .16), after: 5 });
+    verificationIssues.forEach((issue, index) => {
+      text((index + 1) + ". " + issue.subject + " — " + issue.severity, { size: 10, bold: true, after: 2 });
+      text("What seems inconsistent: " + issue.concern, { size: 9, indent: 10 });
+      text("Evidence: " + issue.evidence, { size: 9, indent: 10 });
+      text("Ask SDDA: " + issue.question, { size: 9, indent: 10, after: 5 });
+    });
   }
 
   heading("What is needed next");
