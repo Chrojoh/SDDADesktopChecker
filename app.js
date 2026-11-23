@@ -1390,18 +1390,22 @@ function progressionEliteBlockMarkup(stageIndex) {
   const available = scoreRowsAfterTitle(baseTitle) || [];
   const recorded = championshipTitle(stage.key);
   const honour = String(recorded?.honours || '').match(/trial\s*#?\s*(\d+)/i);
+  const eliteGroups = chronologicalTrialGroups("Elite", available);
   let blockRows = available;
-  if (recorded && honour) {
-    const cutoffIndex = available.findIndex(row => Number(row.trial) === Number(honour[1]));
-    if (cutoffIndex >= 0) {
-      const cutoffTrial = Number(honour[1]);
-      blockRows = available.filter(row => {
-        const groups = chronologicalTrialGroups("Elite", available);
-        const rowIndex = groups.findIndex(group => Number(group.trial) === Number(row.trial));
-        const endIndex = groups.findIndex(group => Number(group.trial) === cutoffTrial);
-        return rowIndex <= endIndex;
+  if (recorded) {
+    let endIndex = honour
+      ? eliteGroups.findIndex(group => Number(group.trial) === Number(honour[1]))
+      : -1;
+    if (endIndex < 0 && recorded.date) {
+      eliteGroups.forEach((group,index) => {
+        if (group.rows.some(row => row.date && row.date <= recorded.date)) endIndex = index;
       });
     }
+    if (endIndex < 0) {
+      return '<div class="mach-stage-card mach-stage-locked"><div class="mach-stage-locked-header"><strong>' +
+        esc(stage.label) + '</strong><small>Recorded title cutoff could not be verified; scores are withheld to avoid mixing blocks</small></div></div>';
+    }
+    blockRows = eliteGroups.slice(0,endIndex + 1).flatMap(group => group.rows);
   }
   const sets = eliteSets(blockRows);
   const lockTrial = honour ? Number(honour[1]) : null;
