@@ -1271,42 +1271,187 @@ function progressionCurrentScoreRows(sets, level, rows = []) {
     '<thead><tr><th>Combination</th><th title="Container">C</th><th title="Exterior">E</th><th title="Interior">I</th><th>Total</th></tr></thead>' +
     '<tbody>' + combinationRows.join("") + partialRows.join("") + '</tbody></table></div>';
 }
-function renderProgressionScoreColumns(activeLedger = currentMachLedgerRows()) {
-  const advancedRows = activeLedger.verified ? activeLedger.rows.filter((row) => row.level === "Advanced") : [];
-  const excellentRows = activeLedger.verified ? activeLedger.rows.filter((row) => row.level === "Excellent") : [];
-  const advanced = activeLedger.verified ? maximizeGoldCombinations("Advanced", activeLedger.rows) : [];
-  const excellent = activeLedger.verified ? maximizeGoldCombinations("Excellent", activeLedger.rows) : [];
-  const eliteTitle = [championshipTitle("elch4"), championshipTitle("elch3"), championshipTitle("elch2"),
-    championshipTitle("elch"), findTitle(/^Elite/i)].find(Boolean);
-  const eliteRows = eliteTitle ? scoreRowsAfterTitle(eliteTitle) : scores.filter((row) => row.level === "Elite");
-  const elite = eliteRows ? eliteSets(eliteRows) : [];
-  const cards = [
-    {level:"Advanced",sets:advanced,rows:advancedRows,accent:"level-accent-silver",elite:false},
-    {level:"Excellent",sets:excellent,rows:excellentRows,accent:"level-accent-gold",elite:false},
-    {level:"Elite",sets:elite,rows:eliteRows || [],accent:"level-accent-elite",elite:true}
+function progressionMachBlockMarkup(level, stageIndex) {
+  const stages = [
+    { key: "mach", label: "MACH" },
+    { key: "mach2", label: "MACH2" },
+    { key: "mach3", label: "MACH3" },
+    { key: "mach4", label: "MACH4" }
   ];
+  const stage = stages[stageIndex];
+  const groups = machTrialGroups();
+  if (!groups) return '<p class="run-empty">Chronological trial order could not be verified.</p>';
+  const prior = stageIndex > 0 ? machCutoffRowForTitle(stages[stageIndex - 1].key) : null;
+  const own = machCutoffRowForTitle(stage.key);
+  const active = stageIndex === 0 || !!prior;
+  const priorRecorded = stageIndex === 0 || !!championshipTitle(stages[stageIndex - 1].key);
+  if (!active) {
+    return '<details class="mach-stage-card mach-stage-locked" disabled><summary><strong>' +
+      esc(stage.label) + '</strong><small>Locked · requires ' + esc(stages[stageIndex - 1].label) +
+      '</small></summary></details>';
+  }
+  if (stageIndex > 0 && !prior) {
+    return '<details class="mach-stage-card mach-stage-locked" disabled><summary><strong>' +
+      esc(stage.label) + '</strong><small>Prior title is recorded, but its score cutoff is not verified</small></summary></details>';
+  }
+  const startIndex = stageIndex === 0 ? 0 : prior.index + 1;
+  const endIndex = own ? own.index : groups.length - 1;
+  const blockRows = endIndex >= startIndex
+    ? groups.slice(startIndex, endIndex + 1).flatMap(group => group.rows).filter(row => row.level === level)
+    : [];
+  const titleLock = stageIndex === 0 ? titleLockForLevel(level, blockRows) : null;
+  const lockedSources = new Set(titleLock ? COMPONENTS.map(component => String(titleLock.parts[component].sourceRow)) : []);
+  const columns = Object.fromEntries(COMPONENTS.map(component => [
+    component,
+    blockRows.filter(row => row.component === component && !lockedSources.has(String(row.sourceRow)))
+      .sort((a,b) => b.score - a.score || a.sourceRow - b.sourceRow)
+  ]));
+  const titleParts = titleLock ? titleLock.parts : null;
+  const combinationCount = Math.min(10 - (titleLock ? 1 : 0),
+    ...COMPONENTS.map(component => columns[component].length));
+  const rowCount = Math.max(titleLock ? 1 : 0,
+    ...COMPONENTS.map(component => columns[component].length + (titleLock ? 1 : 0)));
+  const scoreCell = part => part
+    ? '<span class="mach-score-value">' + esc(part.score) + ' <small>(' + esc(part.trial || '—') + ')</small></span>'
+    : '<span class="mach-score-empty">—</span>';
+  const classify = total => total >= 192 ? "Gold" : total >= 172 ? "Silver" :
+    total >= 142 ? "Bronze" : total >= 100 ? "Satisfactory" : "Insufficient";
+  const rows = [];
+  for (let rowIndex = 0; rowIndex < rowCount; rowIndex++) {
+    const isLock = !!titleLock && rowIndex === 0;
+    const position = isLock ? null : rowIndex - (titleLock ? 1 : 0);
+    const parts = isLock ? titleParts : Object.fromEntries(COMPONENTS.map(component => [
+      component, position >= 0 && position < 10 - (titleLock ? 1 : 0)
+        ? columns[component][position] : null
+    ]));
+    const hasAny = COMPONENTS.some(component => !!parts[component]);
+    if (!hasAny) continue;
+    const complete = COMPONENTS.every(component => !!parts[component]);
+    const total = complete ? COMPONENTS.reduce((sum, component) => sum + Number(parts[component].score || 0), 0) : null;
+    const label = isLock ? (titleLock.special ? "SP title lock" : "Title lock") :
+      complete ? "Combination " + (position + 1 + (titleLock ? 1 : 0)) : "Unmatched";
+    const grade = complete ? classify(total) : "unmatched";
+    rows.push('<tr class="' + (isLock ? 'title-lock-row ' : '') + grade.toLowerCase() + '">' +
+      '<th scope="row">' + label + '</th>' +
+      '<td>' + scoreCell(parts.Container) + '</td>' +
+      '<td>' + scoreCell(parts.Exterior) + '</td>' +
+      '<td>' + scoreCell(parts.Interior) + '</td>' +
+      '<td>' + (complete ? '<strong>' + total + '</strong><small>' + grade + '</small>' : '—') +
+      '</td></tr>');
+  }
+  const unmatchedAfterLimit = COMPONENTS.map(component => columns[component].slice(10 - (titleLock ? 1 : 0)));
+  const extraRows = Math.max(0, ...unmatchedAfterLimit.map(items => items.length));
+  for (let i = 0; i < extraRows; i++) {
+    const parts = Object.fromEntries(COMPONENTS.map(component => [component, unmatchedAfterLimit[COMPONENTS.indexOf(component)][i] || null]));
+    rows.push('<tr class="unmatched-score-row"><th scope="row">Unmatched</th>' +
+      COMPONENTS.map(component => '<td>' + scoreCell(parts[component]) + '</td>').join('') + '<td>—</td></tr>');
+  }
+  const count = component => blockRows.filter(row => row.component === component).length;
+  const cutoff = stageIndex === 0 ? own : prior;
+  const cutoffText = cutoff
+    ? 'Cutoff: ' + esc(stageIndex === 0 ? stage.label : stages[stageIndex - 1].label) +
+      ' achieved · ' + esc(dateLabel(cutoff.date)) + ' · Trial ' + esc(cutoff.trial)
+    : own ? 'Achieved · ' + esc(dateLabel(own.date)) + ' · Trial ' + esc(own.trial)
+      : 'In progress · no title cutoff yet';
+  const completedLabel = own ? ' · title achieved' : ' · in progress';
+  return '<details class="mach-stage-card" open>' +
+    '<summary><span><strong>' + esc(stage.label) + '</strong><small>' + cutoffText + completedLabel +
+    '</small></span><span class="mach-stage-counts">C ' + count("Container") +
+    ' · E ' + count("Exterior") + ' · I ' + count("Interior") +
+    ' · ' + (combinationCount + (titleLock ? 1 : 0)) + ' combinations</span></summary>' +
+    '<div class="mach-stage-content"><div class="progression-compact-table-wrap"><table class="progression-compact-table mach-stage-table">' +
+    '<thead><tr><th>Row</th><th title="Container">C</th><th title="Exterior">E</th><th title="Interior">I</th><th>Total / grade</th></tr></thead>' +
+    '<tbody>' + (rows.length ? rows.join("") : '<tr><td colspan="5">No component scores in this block yet.</td></tr>') +
+    '</tbody></table></div></div></details>';
+}
+function progressionMachLevelMarkup(level) {
+  return '<div class="mach-stage-list">' +
+    [0,1,2,3].map(index => progressionMachBlockMarkup(level,index)).join('') +
+    '</div>';
+}
+function progressionEliteBlockMarkup(stageIndex) {
+  const stages = [
+    { key: "elch", label: "ELCH" },
+    { key: "elch2", label: "ELCH2" },
+    { key: "elch3", label: "ELCH3" },
+    { key: "elch4", label: "ELCH4" }
+  ];
+  const stage = stages[stageIndex];
+  const baseTitle = stageIndex === 0 ? findTitle(/^Elite(?:\s|$)/i) : championshipTitle(stages[stageIndex - 1].key);
+  if (!baseTitle) return '<details class="mach-stage-card mach-stage-locked" disabled><summary><strong>' +
+    esc(stage.label) + '</strong><small>Locked · requires ' +
+    (stageIndex === 0 ? 'Elite title' : esc(stages[stageIndex - 1].label)) +
+    '</small></summary></details>';
+  const available = scoreRowsAfterTitle(baseTitle) || [];
+  const recorded = championshipTitle(stage.key);
+  const honour = String(recorded?.honours || '').match(/trial\s*#?\s*(\d+)/i);
+  let blockRows = available;
+  if (recorded && honour) {
+    const cutoffIndex = available.findIndex(row => Number(row.trial) === Number(honour[1]));
+    if (cutoffIndex >= 0) {
+      const cutoffTrial = Number(honour[1]);
+      blockRows = available.filter(row => {
+        const groups = chronologicalTrialGroups("Elite", available);
+        const rowIndex = groups.findIndex(group => Number(group.trial) === Number(row.trial));
+        const endIndex = groups.findIndex(group => Number(group.trial) === cutoffTrial);
+        return rowIndex <= endIndex;
+      });
+    }
+  }
+  const sets = eliteSets(blockRows);
+  const lockTrial = honour ? Number(honour[1]) : null;
+  const sorted = [...sets].sort((a,b) => {
+    if (lockTrial && Number(a.trial) === lockTrial) return -1;
+    if (lockTrial && Number(b.trial) === lockTrial) return 1;
+    return b.total - a.total || Number(a.trial) - Number(b.trial);
+  });
+  const rows = sorted.map((set,index) => {
+    const label = lockTrial && Number(set.trial) === lockTrial ? 'Title lock' : 'Combination ' + (index + 1);
+    const grade = set.total >= 192 ? 'Gold' : set.total >= 172 ? 'Silver' :
+      set.total >= 142 ? 'Bronze' : set.total >= 100 ? 'Satisfactory' : 'Insufficient';
+    return '<tr class="' + (label === 'Title lock' ? 'title-lock-row ' : '') + grade.toLowerCase() + '">' +
+      '<th>' + label + '</th>' +
+      COMPONENTS.map(component => '<td>' + esc(set.parts[component].score) +
+        ' <small>(' + esc(set.parts[component].trial || set.trial || '—') + ')</small></td>').join('') +
+      '<td><strong>' + set.total + '</strong><small>' + grade + '</small></td></tr>';
+  });
+  const counts = Object.fromEntries(COMPONENTS.map(component => [
+    component, blockRows.filter(row => row.component === component).length
+  ]));
+  const cutoffText = recorded
+    ? 'Cutoff: ' + esc(dateLabel(recorded.date)) + ' · Trial ' + esc(honour?.[1] || 'not listed')
+    : 'In progress · no title cutoff yet';
+  return '<details class="mach-stage-card" open><summary><span><strong>' + esc(stage.label) +
+    '</strong><small>' + cutoffText + '</small></span><span class="mach-stage-counts">C ' +
+    counts.Container + ' · E ' + counts.Exterior + ' · I ' + counts.Interior +
+    ' · ' + sets.length + ' combinations</span></summary><div class="mach-stage-content">' +
+    '<div class="progression-compact-table-wrap"><table class="progression-compact-table mach-stage-table">' +
+    '<thead><tr><th>Trial</th><th>C</th><th>E</th><th>I</th><th>Total / grade</th></tr></thead><tbody>' +
+    (rows.length ? rows.join('') : '<tr><td colspan="5">No complete same-trial combinations yet.</td></tr>') +
+    '</tbody></table></div></div></details>';
+}
+function renderProgressionScoreColumns(activeLedger = currentMachLedgerRows()) {
+  const levels = [
+    { level: "Advanced", accent: "level-accent-silver" },
+    { level: "Excellent", accent: "level-accent-gold" }
+  ];
+  const eliteBase = findTitle(/^Elite(?:\s|$)/i);
+  const levelCards = levels.map(card =>
+    '<details class="progression-score-column title-accordion ' + card.accent + '">' +
+    '<summary class="progression-card-header"><span class="summary-copy"><strong>' + card.level +
+    '</strong><small>Chronological MACH blocks · component scores sorted highest to lowest</small></span>' +
+    '<span class="summary-action">Details</span></summary><div class="progression-expanded-body">' +
+    progressionMachLevelMarkup(card.level) + '</div></details>'
+  ).join('');
+  const eliteCard = '<details class="progression-score-column title-accordion level-accent-elite">' +
+    '<summary class="progression-card-header"><span class="summary-copy"><strong>Elite</strong>' +
+    '<small>ELCH progression · same-trial combinations</small></span><span class="summary-action">Details</span></summary>' +
+    '<div class="progression-expanded-body"><div class="mach-stage-list">' +
+    [0,1,2,3].map(index => progressionEliteBlockMarkup(index)).join('') +
+    '</div></div></details>';
   return '<p class="level-note current-cutoff-announcement">' + esc(activeLedger.message) +
-    '</p>' + '<p class="level-note sp-definition-line">SP means Special title. Title-earning components remain together as one locked combination.</p>' +
-    '<div class="progression-score-columns">' +
-    cards.map((card) => {
-      const completeCount = card.elite ? card.sets.length : card.sets.filter((set) => set.total >= 100).length;
-      const goldCount = card.sets.filter((set) => set.gold && (card.elite || set.total >= 100)).length;
-      const count = card.elite
-        ? card.sets.length + ' complete same-trial · ' + goldCount + ' Gold'
-        : card.rows.length + ' component scores · ' + completeCount + ' complete combinations · ' + goldCount + ' Gold';
-      const current = card.elite
-        ? progressionRunRows(card.sets, true)
-        : !activeLedger.verified
-          ? '<p class="run-empty">Current scores are withheld until the recorded MACH cutoff can be verified.</p>'
-          : progressionCurrentScoreRows(card.sets, card.level, card.rows);
-      return '<details class="progression-score-column title-accordion ' + card.accent + '">' +
-        '<summary class="progression-card-header"><span class="summary-copy"><strong>' + card.level +
-        '</strong><small>' + count + '</small></span><span class="summary-action">Details</span></summary>' +
-        '<div class="progression-expanded-body"><section class="progression-current-combinations">' +
-        '<h4>' + 'Current combinations' + '</h4>' + current + '</section>' +
-        '<section class="progression-history"><h4>' + card.level + ' history</h4>' +
-        progressionHistoryMarkup(card.level) + '</section></div></details>';
-    }).join("") + '</div>';
+    '</p><p class="level-note sp-definition-line">The title-locked combination is the exception and stays in row 1. All remaining C, E and I columns are independently sorted highest to lowest; unmatched scores fill the next blank cell in their own column.</p>' +
+    '<div class="progression-score-columns">' + levelCards + eliteCard + '</div>';
 }
 function currentMachLedgerRows() {
   const stages = [
