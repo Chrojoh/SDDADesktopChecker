@@ -1286,13 +1286,13 @@ function progressionMachBlockMarkup(level, stageIndex) {
   const active = stageIndex === 0 || !!prior;
   const priorRecorded = stageIndex === 0 || !!championshipTitle(stages[stageIndex - 1].key);
   if (!active) {
-    return '<details class="mach-stage-card mach-stage-locked" disabled><summary><strong>' +
+    return '<div class="mach-stage-card mach-stage-locked"><div class="mach-stage-locked-header"><strong>' +
       esc(stage.label) + '</strong><small>Locked · requires ' + esc(stages[stageIndex - 1].label) +
-      '</small></summary></details>';
+      '</small></div></div>';
   }
   if (stageIndex > 0 && !prior) {
-    return '<details class="mach-stage-card mach-stage-locked" disabled><summary><strong>' +
-      esc(stage.label) + '</strong><small>Prior title is recorded, but its score cutoff is not verified</small></summary></details>';
+    return '<div class="mach-stage-card mach-stage-locked"><div class="mach-stage-locked-header"><strong>' +
+      esc(stage.label) + '</strong><small>Prior title is recorded, but its score cutoff is not verified</small></div></div>';
   }
   const startIndex = stageIndex === 0 ? 0 : prior.index + 1;
   const endIndex = own ? own.index : groups.length - 1;
@@ -1379,10 +1379,10 @@ function progressionEliteBlockMarkup(stageIndex) {
   ];
   const stage = stages[stageIndex];
   const baseTitle = stageIndex === 0 ? findTitle(/^Elite(?:\s|$)/i) : championshipTitle(stages[stageIndex - 1].key);
-  if (!baseTitle) return '<details class="mach-stage-card mach-stage-locked" disabled><summary><strong>' +
+  if (!baseTitle) return '<div class="mach-stage-card mach-stage-locked"><div class="mach-stage-locked-header"><strong>' +
     esc(stage.label) + '</strong><small>Locked · requires ' +
     (stageIndex === 0 ? 'Elite title' : esc(stages[stageIndex - 1].label)) +
-    '</small></summary></details>';
+    '</small></div></div>';
   const available = scoreRowsAfterTitle(baseTitle) || [];
   const recorded = championshipTitle(stage.key);
   const honour = String(recorded?.honours || '').match(/trial\s*#?\s*(\d+)/i);
