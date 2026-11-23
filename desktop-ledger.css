@@ -132,3 +132,30 @@ body,.mobile-ledger,.desktop-ledger{background:#f1f0eb!important;color:#202a25}
 .progression-compact-table tr.single-component-row{background:rgba(80,100,120,.055)}
 .progression-compact-table tr.single-component-row th{font-weight:650;color:var(--muted,#667085)}
 .progression-compact-table .single-score-note{font-size:.72em;color:var(--muted,#667085);white-space:normal}
+
+
+/* Desktop MACH / ELCH progression blocks. */
+.desktop-ledger .mach-stage-list{display:grid;gap:8px;min-width:0}
+.desktop-ledger .mach-stage-card{min-width:0;border:1px solid var(--line,#d5d8d2);background:#fff}
+.desktop-ledger .mach-stage-card>summary{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 12px;cursor:pointer;list-style:none}
+.desktop-ledger .mach-stage-card>summary::-webkit-details-marker{display:none}
+.desktop-ledger .mach-stage-card>summary>span:first-child{display:grid;gap:3px;min-width:0}
+.desktop-ledger .mach-stage-card>summary strong,.desktop-ledger .mach-stage-locked-header strong{font-size:13px}
+.desktop-ledger .mach-stage-card>summary small,.desktop-ledger .mach-stage-locked-header small{display:block;color:var(--muted,#626c65);font-size:10px;line-height:1.35}
+.desktop-ledger .mach-stage-counts{font-size:10px;font-weight:700;text-align:right;white-space:nowrap;color:var(--muted,#626c65)}
+.desktop-ledger .mach-stage-content{padding:0 8px 8px}
+.desktop-ledger .mach-stage-table{font-size:11px}
+.desktop-ledger .mach-stage-table th,.desktop-ledger .mach-stage-table td{padding:6px 5px}
+.desktop-ledger .mach-stage-table td small{display:block;font-size:9px}
+.desktop-ledger .mach-stage-table .mach-score-value{white-space:nowrap}
+.desktop-ledger .mach-stage-table .mach-score-empty{color:#9aa19b}
+.desktop-ledger .mach-stage-table tr.title-lock-row{font-weight:800;outline:1px solid #b68b31;outline-offset:-1px}
+.desktop-ledger .mach-stage-table tr.gold{background:#f7edce}
+.desktop-ledger .mach-stage-table tr.silver{background:#edf0f2}
+.desktop-ledger .mach-stage-table tr.bronze{background:#f3e5d8}
+.desktop-ledger .mach-stage-table tr.satisfactory{background:#e7efe8}
+.desktop-ledger .mach-stage-table tr.insufficient{background:#f2e6e5}
+.desktop-ledger .mach-stage-table tr.unmatched-score-row{background:#f4f5f3}
+.desktop-ledger .mach-stage-locked{background:#f1f2ef;color:#7a827c;border-style:dashed}
+.desktop-ledger .mach-stage-locked-header{display:grid;gap:3px;padding:10px 12px}
+@media(max-width:1050px){.desktop-ledger .mach-stage-card>summary{align-items:flex-start;flex-direction:column}.desktop-ledger .mach-stage-counts{text-align:left;white-space:normal}}
