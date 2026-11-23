@@ -1350,7 +1350,7 @@ function progressionMachBlockMarkup(level, stageIndex) {
   for (let i = 0; i < extraRows; i++) {
     const parts = Object.fromEntries(COMPONENTS.map(component => [component, unmatchedAfterLimit[COMPONENTS.indexOf(component)][i] || null]));
     rows.push('<tr class="unmatched-score-row"><th scope="row">Unmatched</th>' +
-      COMPONENTS.map(component => '<td>' + scoreCell(parts[component]) + '</td>').join('') + '<td>—</td></tr>');
+      COMPONENTS.map(component => '<td>' + scoreCell(parts[component]) + '</td>').join('') + '<td>—</td><td>—</td></tr>');
   }
   const count = component => blockRows.filter(row => row.component === component).length;
   const cutoff = stageIndex === 0 ? own : prior;
@@ -1367,7 +1367,7 @@ function progressionMachBlockMarkup(level, stageIndex) {
     ' · ' + (combinationCount + (titleLock ? 1 : 0)) + ' combinations</span></summary>' +
     '<div class="mach-stage-content"><div class="progression-compact-table-wrap"><table class="progression-compact-table mach-stage-table">' +
     '<thead><tr><th>Row</th><th>Container</th><th>Exterior</th><th>Interior</th><th>Grade</th><th>Total</th></tr></thead>' +
-    '<tbody>' + (rows.length ? rows.join("") : '<tr><td colspan="5">No component scores in this block yet.</td></tr>') +
+    '<tbody>' + (rows.length ? rows.join("") : '<tr><td colspan="6">No component scores in this block yet.</td></tr>') +
     '</tbody></table></div></div></details>';
 }
 function progressionMachLevelMarkup(level) {
@@ -1436,7 +1436,7 @@ function progressionEliteBlockMarkup(stageIndex) {
       COMPONENTS.map(component => {
         const part = unmatchedElite[component][i];
         return '<td>' + (part ? esc(part.score) + ' <small>(' + esc(part.trial || '—') + ')</small>' : '—') + '</td>';
-      }).join('') + '<td>—</td></tr>');
+      }).join('') + '<td>—</td><td>—</td></tr>');
   }
   const counts = Object.fromEntries(COMPONENTS.map(component => [
     component, blockRows.filter(row => row.component === component).length
@@ -1450,7 +1450,7 @@ function progressionEliteBlockMarkup(stageIndex) {
     ' · ' + sets.length + ' combinations</span></summary><div class="mach-stage-content">' +
     '<div class="progression-compact-table-wrap"><table class="progression-compact-table mach-stage-table">' +
     '<thead><tr><th>Trial</th><th>Container</th><th>Exterior</th><th>Interior</th><th>Grade</th><th>Total</th></tr></thead><tbody>' +
-    (rows.length ? rows.join('') : '<tr><td colspan="5">No complete same-trial combinations yet.</td></tr>') +
+    (rows.length ? rows.join('') : '<tr><td colspan="6">No complete same-trial combinations yet.</td></tr>') +
     '</tbody></table></div></div></details>';
 }
 function renderProgressionScoreColumns(activeLedger = currentMachLedgerRows()) {
