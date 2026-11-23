@@ -2172,21 +2172,25 @@ async function downloadPdfReport() {
       const part = set[component.toLowerCase()];
       if (part && part.sourceRow != null) usedSourceRows.add(part.sourceRow);
     }));
-    const partialScores = sourceRows
-      .filter((score) => score.level === level && !usedSourceRows.has(score.sourceRow))
-      .sort((a, b) => (Number(a.sourceRow) || 0) - (Number(b.sourceRow) || 0));
-    if (partialScores.length) {
-      const cells = ["Partial", "-", "-", "-", "—", "—"];
-      const componentIndexes = { Container: 1, Exterior: 2, Interior: 3 };
-      partialScores.forEach((score) => {
-        const componentIndex = componentIndexes[score.component];
-        if (componentIndex) {
-          cells[componentIndex] = cells[componentIndex] === "-"
-            ? componentWithTrial(score)
-            : `${cells[componentIndex]}, ${componentWithTrial(score)}`;
-        }
-      });
-      rows.push(cells);
+    // Match the desktop block layout: each unmatched score occupies its own
+    // row in its component column. Rank each component independently, highest
+    // score first, and align the remaining columns by rank.
+    const unmatchedByComponent = Object.fromEntries(COMPONENTS.map((component) => [
+      component,
+      sourceRows
+        .filter((score) => score.level === level && score.component === component && !usedSourceRows.has(score.sourceRow))
+        .sort((a, b) => b.score - a.score || (Number(a.sourceRow) || 0) - (Number(b.sourceRow) || 0))
+    ]));
+    const unmatchedRowCount = Math.max(0, ...COMPONENTS.map((component) => unmatchedByComponent[component].length));
+    for (let index = 0; index < unmatchedRowCount; index++) {
+      rows.push([
+        "Unmatched",
+        componentWithTrial(unmatchedByComponent.Container[index]),
+        componentWithTrial(unmatchedByComponent.Exterior[index]),
+        componentWithTrial(unmatchedByComponent.Interior[index]),
+        "—",
+        "—"
+      ]);
     }
     return rows;
   };
