@@ -1309,8 +1309,9 @@ function progressionMachBlockMarkup(level, stageIndex) {
   const titleParts = titleLock ? titleLock.parts : null;
   const combinationCount = Math.min(10 - (titleLock ? 1 : 0),
     ...COMPONENTS.map(component => columns[component].length));
-  const rowCount = Math.max(titleLock ? 1 : 0,
-    ...COMPONENTS.map(component => columns[component].length + (titleLock ? 1 : 0)));
+  const combinationSlots = 10 - (titleLock ? 1 : 0);
+  const rowCount = (titleLock ? 1 : 0) + Math.min(combinationSlots,
+    Math.max(0, ...COMPONENTS.map(component => columns[component].length)));
   const scoreCell = part => part
     ? '<span class="mach-score-value">' + esc(part.score) + ' <small>(' + esc(part.trial || '—') + ')</small></span>'
     : '<span class="mach-score-empty">—</span>';
@@ -1321,8 +1322,8 @@ function progressionMachBlockMarkup(level, stageIndex) {
     const isLock = !!titleLock && rowIndex === 0;
     const position = isLock ? null : rowIndex - (titleLock ? 1 : 0);
     const parts = isLock ? titleParts : Object.fromEntries(COMPONENTS.map(component => [
-      component, position >= 0 && position < 10 - (titleLock ? 1 : 0)
-        ? columns[component][position] : null
+      component, position >= 0 && position < combinationSlots
+        ? columns[component][position] || null : null
     ]));
     const hasAny = COMPONENTS.some(component => !!parts[component]);
     if (!hasAny) continue;
