@@ -176,3 +176,24 @@ body,.mobile-ledger,.desktop-ledger{background:#f1f0eb!important;color:#202a25}
 .verification-issue-heading span{font-size:.75rem;font-weight:700;color:#8a451e;white-space:nowrap}
 .verification-issue-list p{margin:7px 0 0;font-size:.9rem;line-height:1.45}
 @media(max-width:760px){.verification-report-title-row{display:block}.verification-report-title-row>p{margin-top:6px}.verification-issue-heading{align-items:flex-start;flex-direction:column;gap:4px}}
+
+
+/* Reversible desktop readability pass: larger native sizing without browser zoom. */
+@media (min-width: 1100px) {
+  .desktop-ledger { font-size: 17px; }
+  .desktop-shell { width: min(1540px, calc(100% - 48px)); }
+  .desktop-hero { padding: 40px 0 36px; }
+  .desktop-hero h1 { font-size: 48px; }
+  .desktop-hero p:not(.desktop-kicker) { font-size: 16px; }
+  .desktop-upload-row { gap: 28px; margin: 32px 0; }
+  .desktop-upload { min-height: 92px; }
+  .desktop-ledger .tracker-panel { padding: 36px 0; }
+  .desktop-section-head h2 { font-size: 30px; }
+  .desktop-section-head > p { font-size: 14px; }
+  .desktop-ledger .title-accordion summary { min-height: 76px; padding: 16px 18px; }
+  .desktop-ledger .accordion-body { padding: 0 18px 18px; }
+  .desktop-ledger .run-row { font-size: 12px; }
+  .desktop-ledger .mach-stage-table { font-size: 12px; }
+  .desktop-ledger .mach-stage-table th,
+  .desktop-ledger .mach-stage-table td { padding: 7px 6px; }
+}
