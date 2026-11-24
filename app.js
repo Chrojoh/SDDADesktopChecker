@@ -992,7 +992,7 @@ function renderChronologicalMachStory() {
   const stagesHtml = result.stages.map((stage) => {
     const recordedText = stage.recorded
       ? 'SDDA title sheet: recorded ' + esc(dateLabel(stage.recorded.date)) + '.'
-      : (titlesFileLoaded ? 'No matching SDDA award record was found in the uploaded Titles file.' : 'No Titles file loaded; official award-date comparison is unavailable.');
+      : (titlesFileLoaded ? 'No matching SDDA award record was found in the uploaded Titles file.' : 'Score-only calculation: official award records and dates are unverified; judge-count requirements are assumed and cannot be checked without the Titles file.');
     const steps = stage.steps.map((step) =>
       '<li><strong>Trial ' + esc(step.trial) + (step.date ? ' · ' + esc(dateLabel(step.date)) : '') + '</strong>: ' +
       esc(step.advanced) + ' Advanced + ' + esc(step.excellent) + ' Excellent combinations; ' +
@@ -1010,7 +1010,7 @@ function renderChronologicalMachStory() {
       '<p>' + recordedText + '</p>' + selected + '<details><summary>Trial-by-trial calculation (' + stage.steps.length + ' trials)</summary><ol>' + steps + '</ol></details></article>';
   }).join("");
   host.innerHTML = '<p class="level-note">Trials are processed in the order they appear in the score export. After each complete trial is added, the eligible pool is re-paired high-to-low and checked against the title rules. The first trial satisfying every requirement becomes the cutoff; later trials are not used for that title.</p>' +
-    (!titlesFileLoaded ? '<p class="level-note">Upload the Dog Titles file to compare calculated completion points with SDDA-recorded award dates. This audit is calculated from scores and is not official title confirmation.</p>' : '') +
+    (!titlesFileLoaded ? '<p class="level-note">Score-only calculation: cutoffs are based on the first qualifying trial in chronological score order. Judge-count requirements are assumed, not verified; use the optional Titles file to confirm official awards, dates, and judge eligibility.</p>' : '') +
     (stagesHtml || '<p class="level-note">No complete championship calculation could be produced from the current score history.</p>');
 }
 
@@ -1716,11 +1716,6 @@ function renderAchievementVerificationReport() {
 
 function render() {
   if (!scores.length && !games.length) { $("report").hidden = true; return; }
-  if (!titlesFileLoaded) {
-    $("report").hidden = true;
-    $("message").textContent = "Dog Titles file required. Upload the Dog Titles CSV or XLSX to calculate title progress and championship cutoff dates.";
-    return;
-  }
   const dogNumbers = [...new Set([...scores, ...games].map((row) => row.dogNumber).filter(Boolean))];
   if (dogNumbers.length > 1) { $("message").textContent = "The score file contains more than one dog. Please download and upload one dog's history at a time."; $("report").hidden = true; return; }
   $("report").hidden = false;
