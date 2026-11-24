@@ -178,22 +178,22 @@ body,.mobile-ledger,.desktop-ledger{background:#f1f0eb!important;color:#202a25}
 @media(max-width:760px){.verification-report-title-row{display:block}.verification-report-title-row>p{margin-top:6px}.verification-issue-heading{align-items:flex-start;flex-direction:column;gap:4px}}
 
 
-/* Reversible desktop readability pass: approximately 125% native sizing. */
+/* Reversible desktop readability pass: approximately 185% native sizing. */
 @media (min-width: 1100px) {
-  .desktop-ledger { font-size: 17.5px; }
-  .desktop-shell { width: min(1525px, calc(100% - 60px)); }
-  .desktop-hero { padding: 42px 0 38px; }
-  .desktop-hero h1 { font-size: 52px; }
-  .desktop-hero p:not(.desktop-kicker) { font-size: 16px; }
-  .desktop-upload-row { gap: 30px; margin: 35px 0; }
-  .desktop-upload { min-height: 90px; }
-  .desktop-ledger .tracker-panel { padding: 38px 0; }
-  .desktop-section-head h2 { font-size: 34px; }
-  .desktop-section-head > p { font-size: 16px; }
-  .desktop-ledger .title-accordion summary { min-height: 88px; padding: 18px 20px; }
-  .desktop-ledger .accordion-body { padding: 0 20px 20px; }
-  .desktop-ledger .run-row { font-size: 13px; }
-  .desktop-ledger .mach-stage-table { font-size: 13px; }
+  .desktop-ledger { font-size: 26px; }
+  .desktop-shell { width: min(2255px, calc(100% - 60px)); }
+  .desktop-hero { padding: 62px 0 56px; }
+  .desktop-hero h1 { font-size: 77px; }
+  .desktop-hero p:not(.desktop-kicker) { font-size: 24px; }
+  .desktop-upload-row { gap: 44px; margin: 52px 0; }
+  .desktop-upload { min-height: 133px; }
+  .desktop-ledger .tracker-panel { padding: 56px 0; }
+  .desktop-section-head h2 { font-size: 50px; }
+  .desktop-section-head > p { font-size: 24px; }
+  .desktop-ledger .title-accordion summary { min-height: 130px; padding: 27px 30px; }
+  .desktop-ledger .accordion-body { padding: 0 30px 30px; }
+  .desktop-ledger .run-row { font-size: 19px; }
+  .desktop-ledger .mach-stage-table { font-size: 19px; }
   .desktop-ledger .mach-stage-table th,
-  .desktop-ledger .mach-stage-table td { padding: 7px 6px; }
+  .desktop-ledger .mach-stage-table td { padding: 10px 9px; }
 }
