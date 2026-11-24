@@ -178,22 +178,22 @@ body,.mobile-ledger,.desktop-ledger{background:#f1f0eb!important;color:#202a25}
 @media(max-width:760px){.verification-report-title-row{display:block}.verification-report-title-row>p{margin-top:6px}.verification-issue-heading{align-items:flex-start;flex-direction:column;gap:4px}}
 
 
-/* Reversible desktop readability pass: larger native sizing without browser zoom. */
+/* Reversible desktop readability pass: approximately 125% native sizing. */
 @media (min-width: 1100px) {
-  .desktop-ledger { font-size: 17px; }
-  .desktop-shell { width: min(1540px, calc(100% - 48px)); }
-  .desktop-hero { padding: 40px 0 36px; }
-  .desktop-hero h1 { font-size: 48px; }
+  .desktop-ledger { font-size: 17.5px; }
+  .desktop-shell { width: min(1525px, calc(100% - 60px)); }
+  .desktop-hero { padding: 42px 0 38px; }
+  .desktop-hero h1 { font-size: 52px; }
   .desktop-hero p:not(.desktop-kicker) { font-size: 16px; }
-  .desktop-upload-row { gap: 28px; margin: 32px 0; }
-  .desktop-upload { min-height: 92px; }
-  .desktop-ledger .tracker-panel { padding: 36px 0; }
-  .desktop-section-head h2 { font-size: 30px; }
-  .desktop-section-head > p { font-size: 14px; }
-  .desktop-ledger .title-accordion summary { min-height: 76px; padding: 16px 18px; }
-  .desktop-ledger .accordion-body { padding: 0 18px 18px; }
-  .desktop-ledger .run-row { font-size: 12px; }
-  .desktop-ledger .mach-stage-table { font-size: 12px; }
+  .desktop-upload-row { gap: 30px; margin: 35px 0; }
+  .desktop-upload { min-height: 90px; }
+  .desktop-ledger .tracker-panel { padding: 38px 0; }
+  .desktop-section-head h2 { font-size: 34px; }
+  .desktop-section-head > p { font-size: 16px; }
+  .desktop-ledger .title-accordion summary { min-height: 88px; padding: 18px 20px; }
+  .desktop-ledger .accordion-body { padding: 0 20px 20px; }
+  .desktop-ledger .run-row { font-size: 13px; }
+  .desktop-ledger .mach-stage-table { font-size: 13px; }
   .desktop-ledger .mach-stage-table th,
   .desktop-ledger .mach-stage-table td { padding: 7px 6px; }
 }
