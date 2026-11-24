@@ -1330,11 +1330,11 @@ function progressionMachBlockMarkup(level, stageIndex) {
       .sort((a,b) => b.score - a.score || a.sourceRow - b.sourceRow)
   ]));
   const titleParts = titleLock ? titleLock.parts : null;
-  const combinationCount = Math.min(10 - (titleLock ? 1 : 0),
-    ...COMPONENTS.map(component => columns[component].length));
-  const combinationSlots = 10 - (titleLock ? 1 : 0);
-  const rowCount = (titleLock ? 1 : 0) + Math.min(combinationSlots,
-    Math.max(0, ...COMPONENTS.map(component => columns[component].length)));
+  // Display every score accumulated before this stage's cutoff. The title
+  // requirement may be met before the final trial in the block is entered;
+  // later rows still belong in this block and should not be hidden as extras.
+  const combinationCount = Math.min(...COMPONENTS.map(component => columns[component].length)) + (titleLock ? 1 : 0);
+  const rowCount = (titleLock ? 1 : 0) + Math.max(0, ...COMPONENTS.map(component => columns[component].length));
   const scoreCell = part => part
     ? '<span class="mach-score-value">' + esc(part.score) + ' <small>(' + esc(part.trial || '—') + ')</small></span>'
     : '<span class="mach-score-empty">—</span>';
@@ -1345,7 +1345,7 @@ function progressionMachBlockMarkup(level, stageIndex) {
     const isLock = !!titleLock && rowIndex === 0;
     const position = isLock ? null : rowIndex - (titleLock ? 1 : 0);
     const parts = isLock ? titleParts : Object.fromEntries(COMPONENTS.map(component => [
-      component, position >= 0 && position < combinationSlots
+      component, position >= 0
         ? columns[component][position] || null : null
     ]));
     const hasAny = COMPONENTS.some(component => !!parts[component]);
@@ -1363,13 +1363,6 @@ function progressionMachBlockMarkup(level, stageIndex) {
       '<td>' + (complete ? '<strong>' + grade + '</strong>' : '—') + '</td>' +
       '<td>' + (complete ? '<strong>' + total + '</strong>' : '—') +
       '</td></tr>');
-  }
-  const unmatchedAfterLimit = COMPONENTS.map(component => columns[component].slice(10 - (titleLock ? 1 : 0)));
-  const extraRows = Math.max(0, ...unmatchedAfterLimit.map(items => items.length));
-  for (let i = 0; i < extraRows; i++) {
-    const parts = Object.fromEntries(COMPONENTS.map(component => [component, unmatchedAfterLimit[COMPONENTS.indexOf(component)][i] || null]));
-    rows.push('<tr class="unmatched-score-row"><th scope="row">Unmatched</th>' +
-      COMPONENTS.map(component => '<td>' + scoreCell(parts[component]) + '</td>').join('') + '<td>—</td><td>—</td></tr>');
   }
   const count = component => blockRows.filter(row => row.component === component).length;
   const cutoff = stageIndex === 0 ? own : prior;
