@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>SDDA Achievement Ledger — Desktop</title><link rel="apple-touch-icon" href="./icons/icon-192.png"><link rel="manifest" href="./manifest.webmanifest"><meta name="theme-color" content="#315b49"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="SDDA Ledger">
+  <title>SDDA Achievement Ledger — Desktop</title><link rel="manifest" href="./manifest.webmanifest"><meta name="theme-color" content="#315b49"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="SDDA Ledger">
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="games.css">
   <link rel="stylesheet" href="mobile-dashboard.css?v=20261027-2">
@@ -26,8 +26,26 @@
       line-height: 1.35;
     }
   </style>
+<link rel="icon" href="./icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="./icons/ledger-192.png">
+<style>
+  #ledger-loading {
+    position: fixed;
+    inset: 0;
+    z-index: 2147483647;
+    display: grid;
+    place-items: center;
+    background: #315b49;
+    color: #fff;
+    font: 700 clamp(2.5rem, 9vw, 4.5rem)/1 system-ui, sans-serif;
+  }
+  @media print { #ledger-loading { display: none; } }
+</style>
+<noscript><style>#ledger-loading { display: none; }</style></noscript>
 </head>
 <body class="desktop-ledger">
+<div id="ledger-loading" role="status" aria-label="Loading Ledger">Ledger</div>
+
 <aside class="pwa-tools" id="pwa-tools" aria-label="App options">
   <details open>
     <summary>App options</summary>
@@ -282,5 +300,10 @@ if('serviceWorker'in navigator){navigator.serviceWorker.ready.then(r=>{registrat
 else inspect();
 updateInstall();
 })();
+</script>
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    document.getElementById("ledger-loading").remove();
+  }, { once: true });
 </script>
 </body></html>
