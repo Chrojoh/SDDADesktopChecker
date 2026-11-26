@@ -91,9 +91,11 @@
     </section>
 
     <div class="sdda-device-records">
-  <p>Choose Scores, Titles, or both. For Titles only, load the saved dog first.</p>
+  <strong>Review your upload</strong>
+  <p>Use the upload buttons above to select your files. Review shows which dog will be updated before you save.</p>
+  <p>Uploading only Titles? Load the dog from Saved dogs below first.</p>
   <div class="sdda-device-controls">
-    <button type="button" id="sdda-review-update">Review update</button>
+    <button type="button" id="sdda-review-update">Review selected files</button>
     <button type="button" id="sdda-cancel-update" hidden>Cancel review</button>
   </div>
   <p id="sdda-update-status" role="status"></p>
@@ -265,7 +267,7 @@ let revision = 0;
 function clearReview(message = "") {
   revision++;
   pending = null;
-  reviewButton.textContent = "Review update";
+  reviewButton.textContent = "Review selected files";
   cancelButton.hidden = true;
   updateStatus.textContent = message;
 }
@@ -284,7 +286,7 @@ reviewButton.addEventListener("click", async () => {
   try {
     if (!pending) {
       const scoresFile = scoresInput.files[0], titlesFile = titlesInput.files[0];
-      if (!scoresFile && !titlesFile) throw new Error("Choose a Scores or Titles file first.");
+      if (!scoresFile && !titlesFile) throw new Error("Use an upload button above to select a file, then come back to review it.");
       if (!scoresFile && !current) throw new Error("Load the saved dog before replacing its Titles.");
       const [scoreData, titleData] = await Promise.all([
         scoresFile ? readDogScores(scoresFile) : null,
