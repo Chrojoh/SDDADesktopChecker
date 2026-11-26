@@ -42,6 +42,20 @@
   @media print { #ledger-loading { display: none; } }
 </style>
 <noscript><style>#ledger-loading { display: none; }</style></noscript>
+<style>
+  .mach-swap-score {
+    padding: .3em .5em;
+    border: 1px solid #366b83;
+    border-radius: .35em;
+    background: #fff;
+    color: #174b65;
+    font: inherit;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .mach-swap-score[aria-pressed="true"] { background: #185f9a; color: #fff; }
+  .mach-swap-score:focus-visible { outline: 2px solid #185f9a; outline-offset: 2px; }
+</style>
 </head>
 <body class="desktop-ledger">
 <div id="ledger-loading" role="status" aria-label="Loading Ledger">Ledger</div>
@@ -154,7 +168,7 @@
     
   </main>
   <footer class="mobile-footer">Independent planning aid. SDDA remains the authority for official title approval.</footer>
-  <script src="vendor/xlsx.full.min.js"></script><script src="vendor/pdf-lib.min.js"></script><script src="app.js?v=20261126-record-updates"></script>
+  <script src="vendor/xlsx.full.min.js"></script><script src="vendor/pdf-lib.min.js"></script><script src="app.js?v=20261126-mach-swaps"></script>
 
 <script>
 (function(){
