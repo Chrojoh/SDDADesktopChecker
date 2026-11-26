@@ -3,11 +3,11 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>SDDA Achievement Ledger — Desktop</title><link rel="manifest" href="./manifest.webmanifest"><meta name="theme-color" content="#315b49"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="SDDA Ledger">
+  <title>SDDA Achievement Ledger</title><link rel="manifest" href="./manifest.webmanifest"><meta name="theme-color" content="#315b49"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="SDDA Ledger">
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="games.css">
   <link rel="stylesheet" href="mobile-dashboard.css?v=20261027-2">
-  <link rel="stylesheet" href="desktop-ledger.css?v=20261124-native-scale-185">
+  <link rel="stylesheet" href="desktop-ledger.css?v=20261126-responsive">
   <style>
     .dog-scores-upload-copy {
       flex: 1;
@@ -86,7 +86,7 @@
 
   <main class="desktop-shell">
     <section class="desktop-upload-row">
-      <div class="desktop-file-stack"><label class="score-upload desktop-upload"><span class="dog-scores-upload-copy"><strong>Click here to upload your Dog Scores file</strong><small>Choose the <b>XLSX</b> or <b>CSV</b> file you downloaded from your registered SDDA account.</small></span><input id="scores-file" type="file"></label><label class="score-upload desktop-upload titles-upload"><span><strong>Optional — Upload Dog Titles</strong><small>Verifies official title records, award dates, and judge requirements</small></span><input id="titles-file" type="file"></label></div>
+      <div class="desktop-file-stack"><label class="score-upload desktop-upload"><span class="dog-scores-upload-copy"><strong>Click here to upload your Dog Scores file</strong><small>Choose the <b>XLSX</b> or <b>CSV</b> file you downloaded from your registered SDDA account.</small></span><input id="scores-file" type="file" accept=".csv,.xlsx"></label><label class="score-upload desktop-upload titles-upload"><span><strong>Optional — Upload Dog Titles</strong><small>Verifies official title records, award dates, and judge requirements</small></span><input id="titles-file" type="file" accept=".csv,.xlsx"></label></div>
       <div class="upload-copy"><p class="file-name"><strong>Tip for keeping files organized.</strong> Download each dog’s Scores and Titles files from your SDDA account. When saving each download, choose <strong>Save As</strong> and include your dog’s name in the filename so you can tell at a glance which dog it belongs to. For example, use <strong>Maple - Dog Scores.xlsx</strong> and <strong>Maple - Dog Titles.xlsx</strong>.</p><p id="scores-name" class="file-name">No score file selected.</p><p id="titles-name" class="file-name">No Titles file selected.</p><p class="privacy-line">Files are processed locally. Imported records can be saved on this device; you may delete the downloads after both imports succeed.</p><div id="message" class="message">Upload the Dog Scores file to calculate achievements. The Dog Titles file is optional and adds official award and judge-requirement verification.</div></div>
     </section>
 
@@ -360,7 +360,7 @@ install.addEventListener('click',async()=>{
  await promptEvent.prompt();await promptEvent.userChoice;promptEvent=null;updateInstall();
 });
 async function inspect(){
- if(!('serviceWorker'in navigator)){say('Offline support is not available in this browser.','Use a supported browser and open this app from its HTTPS website.');return;}
+ if (!('serviceWorker' in navigator) || !window.isSecureContext || location.protocol === 'file:') {say('Offline support is not available in this browser.','Use a supported browser and open this app from its HTTPS website.');return;}
  registration=await navigator.serviceWorker.getRegistration();
  if(!registration){say('Offline setup has not started yet.','Keep this app open while connected to the internet, then check again.');return;}
  const active=registration.active||registration.waiting||registration.installing;
@@ -384,8 +384,12 @@ check.addEventListener('click',async()=>{
 });
 window.addEventListener('online',inspect);window.addEventListener('offline',inspect);
 if(installed())install.hidden=true;
-if('serviceWorker'in navigator){navigator.serviceWorker.ready.then(r=>{registration=r;inspect();}).catch(inspect);}
-else inspect();
+if ('serviceWorker' in navigator && window.isSecureContext && location.protocol !== 'file:') {
+  navigator.serviceWorker.register('./sw.js').then(result => {
+    registration = result;
+    return navigator.serviceWorker.ready;
+  }).then(inspect).catch(inspect);
+} else inspect();
 updateInstall();
 })();
 </script>

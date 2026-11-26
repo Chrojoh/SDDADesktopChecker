@@ -1,4 +1,4 @@
-const CACHE_NAME = "sdda-ledger-offline-mach-gold-pairs-20261126";
+const CACHE_NAME = "sdda-ledger-offline-responsive-20261126";
 const CORE_ASSETS = [
   "./",
   "./index.html",
@@ -6,7 +6,7 @@ const CORE_ASSETS = [
   "./styles.css",
   "./games.css",
   "./mobile-dashboard.css",
-  "./desktop-ledger.css",
+  "./desktop-ledger.css?v=20261126-responsive",
   "./vendor/xlsx.full.min.js",
   "./vendor/pdf-lib.min.js",
   "./manifest.webmanifest",
