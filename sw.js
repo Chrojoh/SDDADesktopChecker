@@ -1,4 +1,4 @@
-const CACHE_NAME = "sdda-ledger-offline-responsive-20261126";
+const CACHE_NAME = "sdda-ledger-offline-phone-backup-20261126";
 const CORE_ASSETS = [
   "./",
   "./index.html",
