@@ -8,6 +8,24 @@
   <link rel="stylesheet" href="games.css">
   <link rel="stylesheet" href="mobile-dashboard.css?v=20261027-2">
   <link rel="stylesheet" href="desktop-ledger.css?v=20261124-native-scale-185">
+  <style>
+    .dog-scores-upload-copy {
+      flex: 1;
+      min-width: 0;
+    }
+    .dog-scores-upload-copy > strong {
+      display: block;
+      font-size: 1.35em;
+      font-weight: 800;
+      line-height: 1.2;
+    }
+    .dog-scores-upload-copy > small {
+      display: block;
+      margin-top: .3em;
+      font-size: 1em;
+      line-height: 1.35;
+    }
+  </style>
 </head>
 <body class="desktop-ledger">
 <aside class="pwa-tools" id="pwa-tools" aria-label="App options">
@@ -50,7 +68,7 @@
 
   <main class="desktop-shell">
     <section class="desktop-upload-row">
-      <div class="desktop-file-stack"><label class="score-upload desktop-upload"><span><strong>Upload Dog Scores</strong><small>Choose the XLSX or CSV downloaded for one registered dog</small></span><input id="scores-file" type="file"></label><label class="score-upload desktop-upload titles-upload"><span><strong>Optional — Upload Dog Titles</strong><small>Verifies official title records, award dates, and judge requirements</small></span><input id="titles-file" type="file"></label></div>
+      <div class="desktop-file-stack"><label class="score-upload desktop-upload"><span class="dog-scores-upload-copy"><strong>Click here to upload your Dog Scores file</strong><small>Choose the <b>XLSX</b> or <b>CSV</b> file you downloaded from your registered SDDA account.</small></span><input id="scores-file" type="file"></label><label class="score-upload desktop-upload titles-upload"><span><strong>Optional — Upload Dog Titles</strong><small>Verifies official title records, award dates, and judge requirements</small></span><input id="titles-file" type="file"></label></div>
       <div class="upload-copy"><p id="scores-name" class="file-name">No score file selected.</p><p id="titles-name" class="file-name">No Titles file selected.</p><p class="privacy-line">Files are processed locally. Imported records can be saved on this device; you may delete the downloads after both imports succeed.</p><div id="message" class="message">Upload the Dog Scores file to calculate achievements. The Dog Titles file is optional and adds official award and judge-requirement verification.</div></div>
     </section>
 
@@ -110,7 +128,7 @@
     
   </main>
   <footer class="mobile-footer">Independent planning aid. SDDA remains the authority for official title approval.</footer>
-  <script src="vendor/xlsx.full.min.js"></script><script src="vendor/pdf-lib.min.js"></script><script src="app.js?v=20261123-verification-report"></script>
+  <script src="vendor/xlsx.full.min.js"></script><script src="vendor/pdf-lib.min.js"></script><script src="app.js?v=20261125-games-title-fix"></script>
 
 <script>
 (function(){
