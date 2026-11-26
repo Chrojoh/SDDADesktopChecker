@@ -1,8 +1,8 @@
-const CACHE_NAME = "sdda-ledger-offline-ledger-brand-20261126";
+const CACHE_NAME = "sdda-ledger-offline-record-updates-20261126";
 const CORE_ASSETS = [
   "./",
   "./index.html",
-  "./app.js",
+  "./app.js?v=20261126-record-updates",
   "./styles.css",
   "./games.css",
   "./mobile-dashboard.css",
